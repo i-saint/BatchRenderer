@@ -15,6 +15,10 @@
         sampler2D _MainTex;
 
 #if defined(SHADER_API_D3D11) || defined(SHADER_API_PSSL)
+    #define WITH_STRUCTURED_BUFFER
+#endif
+
+#ifdef WITH_STRUCTURED_BUFFER
         struct MetaData
         {
             int num_instances;
@@ -32,11 +36,20 @@
 
         int ApplyInstanceTransform(inout float4 vertex, float2 id)
         {
-#if defined(SHADER_API_D3D11) || defined(SHADER_API_PSSL)
+#ifdef WITH_STRUCTURED_BUFFER
             int instance_id = g_metadata[0].begin + id.x;
             float4x4 trans = g_entities[instance_id].trans;
             vertex = mul(trans, vertex);
             return instance_id;
+#else
+            return 0;
+#endif
+        }
+
+        int GetNumInstances()
+        {
+#ifdef WITH_STRUCTURED_BUFFER
+            return g_metadata[0].num_instances;
 #else
             return 0;
 #endif
@@ -48,16 +61,14 @@
         #pragma surface surf Lambert vertex:vert
         #pragma target 5.0
 
-        void vert (inout appdata_full v, out Input data)
+        void vert (inout appdata_full v, out Input o)
         {
-            UNITY_INITIALIZE_OUTPUT(Input,data);
+            UNITY_INITIALIZE_OUTPUT(Input,o);
 
             int instance_id = ApplyInstanceTransform(v.vertex, v.texcoord1);
 
-            data.uv_MainTex = v.texcoord;
-#if defined(SHADER_API_D3D11) || defined(SHADER_API_PSSL)
-            data.kill = instance_id > g_metadata[0].num_instances;
-#endif
+            o.uv_MainTex = v.texcoord;
+            o.kill = instance_id > GetNumInstances();
         }
 
         void surf (Input IN, inout SurfaceOutput o)
@@ -70,7 +81,6 @@
         }
         ENDCG
 
-
         Pass {
             Name "ShadowCaster"
             Tags { "LightMode" = "ShadowCaster" }
@@ -82,8 +92,6 @@
             Offset 1, 1
 
         CGPROGRAM
-// Upgrade NOTE: excluded shader from DX11 and Xbox360; has structs without semantics (struct v2f members kill)
-#pragma exclude_renderers d3d11 xbox360
             #pragma vertex vert
             #pragma fragment frag
             #pragma target 5.0
@@ -92,18 +100,16 @@
 
             struct v2f { 
                 V2F_SHADOW_CASTER;
-                float kill;
+                float kill : TEXCOORD5;
             };
 
             v2f vert( appdata_full v )
             {
-                int instance_id = ApplyInstanceTransform(v.vertex, v.texcoord2);
+                int instance_id = ApplyInstanceTransform(v.vertex, v.texcoord1);
 
                 v2f o;
                 TRANSFER_SHADOW_CASTER(o)
-#if defined(SHADER_API_D3D11) || defined(SHADER_API_PSSL)
-                o.kill = instance_id > g_metadata[0].num_instances;
-#endif
+                o.kill = instance_id > GetNumInstances();
                 return o;
             }
 
@@ -124,8 +130,6 @@
             ZTest LEqual
 
         CGPROGRAM
-// Upgrade NOTE: excluded shader from DX11 and Xbox360; has structs without semantics (struct v2f members kill)
-#pragma exclude_renderers d3d11 xbox360
             #pragma vertex vert
             #pragma fragment frag
             #pragma target 5.0
@@ -135,18 +139,16 @@
 
             struct v2f { 
                 V2F_SHADOW_COLLECTOR;
-                float kill;
+                float kill : TEXCOORD5;
             };
 
             v2f vert( appdata_full v )
             {
-                int instance_id = ApplyInstanceTransform(v.vertex, v.texcoord2);
+                int instance_id = ApplyInstanceTransform(v.vertex, v.texcoord1);
             
                 v2f o;
                 TRANSFER_SHADOW_COLLECTOR(o)
-#if defined(SHADER_API_D3D11) || defined(SHADER_API_PSSL)
-                o.kill = instance_id > g_metadata[0].num_instances;
-#endif
+                o.kill = instance_id > GetNumInstances();
                 return o;
             }
         

@@ -1,20 +1,20 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 public class BatchRenderer : MonoBehaviour
 {
     public void AddInstance(Transform trans)
     {
         if (m_num_instances >= m_max_instances) return;
-        m_entities[m_num_instances++] = new EntityData { trans = trans.localToWorldMatrix };
+        m_entities[m_num_instances++].trans = trans.localToWorldMatrix;
     }
 
     public void AddInstance(Vector3 position, Quaternion rotation, Vector3 scale)
     {
         if (m_num_instances >= m_max_instances) return;
-        //m_entities[m_num_instances++] = new EntityData { trans = Matrix4x4.identity };
-        m_entities[m_num_instances++] = new EntityData { trans = Matrix4x4.TRS(position, rotation, scale) };
+        m_entities[m_num_instances++].trans = Matrix4x4.TRS(position, rotation, scale);
     }
 
 
@@ -112,13 +112,17 @@ public class BatchRenderer : MonoBehaviour
         }
     }
 
-    void Update()
+    unsafe void Update()
     {
-        for (int i = 0; i < 65536; ++i )
+        //System.IntPtr p = Marshal.UnsafeAddrOfPinnedArrayElement(m_entities, m_num_instances);
+        for (int i = 0; i < 65536; ++i)
         {
-            Vector3 pos = new Vector3(0.25f * (i/256)-5.0f, -0.5f, 0.25f * (i%256)-5.0f);
-            m_entities[m_num_instances++] = new EntityData { trans = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one * 0.2f) };
-            //AddInstance(pos, Quaternion.identity, Vector3.one * 0.2f);
+            Vector3 pos = new Vector3(
+                0.25f * (i / 256) - 5.0f,
+                -0.5f,
+                0.25f * (i % 256) - 5.0f );
+            //m_entities[m_num_instances++].trans = Matrix4x4.TRS(pos, Quaternion.identity, Vector3.one * 0.2f);
+            AddInstance(pos, Quaternion.identity, Vector3.one * 0.2f);
         }
     }
 
