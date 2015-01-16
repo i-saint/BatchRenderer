@@ -112,7 +112,7 @@ public class BatchRenderer : MonoBehaviour
         }
     }
 
-    unsafe void Update()
+    void Update()
     {
         //System.IntPtr p = Marshal.UnsafeAddrOfPinnedArrayElement(m_entities, m_num_instances);
         for (int i = 0; i < 65536; ++i)
