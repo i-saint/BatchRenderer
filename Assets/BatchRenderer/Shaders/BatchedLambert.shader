@@ -1,164 +1,139 @@
 ﻿Shader "BatchRenderer/Lambert" {
-    Properties {
-        _MainTex ("Base (RGB)", 2D) = "white" {}
+Properties {
+    _Color ("Main Color", Color) = (1,1,1,1)
+    _MainTex ("Base (RGB)", 2D) = "white" {}
+}
+SubShader {
+    Tags { "RenderType"="BatchedOpaque" }
+    LOD 200
+
+
+CGPROGRAM
+#pragma target 5.0
+#pragma surface surf Lambert vertex:vert
+#include "UnityCG.cginc"
+#include "BatchRenderer.cginc"
+
+struct Input {
+    float2 uv_MainTex;
+    float kill;
+};
+
+sampler2D _MainTex;
+fixed4 _Color;
+
+void vert (inout appdata_full v, out Input o)
+{
+    UNITY_INITIALIZE_OUTPUT(Input,o);
+
+    int instance_id = ApplyInstanceTransform(v.vertex, v.texcoord1);
+
+    o.uv_MainTex = v.texcoord;
+    o.kill = instance_id >= GetNumInstances();
+}
+
+void surf (Input IN, inout SurfaceOutput o)
+{
+    if(IN.kill!=0.0f) { discard; }
+
+    fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * _Color;
+    o.Albedo = c.rgb;
+    o.Alpha = c.a;
+}
+ENDCG
+
+
+    Pass {
+        Name "ShadowCaster"
+        Tags { "LightMode" = "ShadowCaster" }
+
+        Fog {Mode Off}
+        ZWrite On ZTest LEqual Cull Off
+        Offset 1, 1
+
+CGPROGRAM
+#pragma target 5.0
+#pragma vertex vert
+#pragma fragment frag
+#pragma multi_compile_shadowcaster
+#include "UnityCG.cginc"
+#include "BatchRenderer.cginc"
+
+struct appdata {
+    float4 vertex : POSITION;
+    float4 texcoord1 : TEXCOORD1;
+};
+
+struct v2f {
+    V2F_SHADOW_CASTER;
+    //float kill : TEXCOORD5;
+};
+
+v2f vert( appdata v )
+{
+    int instance_id = ApplyInstanceTransform(v.vertex, v.texcoord1);
+
+    v2f o;
+    TRANSFER_SHADOW_CASTER(o)
+    //o.kill = instance_id >= GetNumInstances();
+    return o;
+}
+
+float4 frag( v2f i ) : SV_Target
+{
+    //if(i.kill!=0.0f) { discard; }
+    SHADOW_CASTER_FRAGMENT(i)
+}
+ENDCG
     }
-    SubShader {
-        Tags { "RenderType"="Opaque" }
-        LOD 200
-
-        CGINCLUDE
-        struct Input {
-            float2 uv_MainTex;
-            float kill;
-        };
-
-        sampler2D _MainTex;
-
-#if defined(SHADER_API_D3D11) || defined(SHADER_API_PSSL)
-    #define WITH_STRUCTURED_BUFFER
-#endif
-
-#ifdef WITH_STRUCTURED_BUFFER
-        struct MetaData
-        {
-            int num_instances;
-            int begin;
-            int end;
-            int pad;
-        };
-        struct EntityData
-        {
-            float4x4 trans;
-        };
-        StructuredBuffer<MetaData> g_metadata;
-        StructuredBuffer<EntityData> g_entities;
-#endif
-
-        int ApplyInstanceTransform(inout float4 vertex, float2 id)
-        {
-#ifdef WITH_STRUCTURED_BUFFER
-            int instance_id = g_metadata[0].begin + id.x;
-            float4x4 trans = g_entities[instance_id].trans;
-            vertex = mul(trans, vertex);
-            return instance_id;
-#else
-            return 0;
-#endif
-        }
-
-        int GetNumInstances()
-        {
-#ifdef WITH_STRUCTURED_BUFFER
-            return g_metadata[0].num_instances;
-#else
-            return 0;
-#endif
-        }
-        ENDCG
 
 
-        CGPROGRAM
-        #pragma surface surf Lambert vertex:vert
-        #pragma target 5.0
 
-        void vert (inout appdata_full v, out Input o)
-        {
-            UNITY_INITIALIZE_OUTPUT(Input,o);
+    Pass {
+        Name "ShadowCollector"
+        Tags { "LightMode" = "ShadowCollector" }
 
-            int instance_id = ApplyInstanceTransform(v.vertex, v.texcoord1);
+        Fog {Mode Off}
+        ZWrite On ZTest LEqual
 
-            o.uv_MainTex = v.texcoord;
-            o.kill = instance_id > GetNumInstances();
-        }
+CGPROGRAM
+#pragma target 5.0
+#pragma vertex vert
+#pragma fragment frag
+#pragma multi_compile_shadowcollector 
 
-        void surf (Input IN, inout SurfaceOutput o)
-        {
-            if(IN.kill!=0.0f) { discard; }
+#define SHADOW_COLLECTOR_PASS
+#include "UnityCG.cginc"
+#include "BatchRenderer.cginc"
 
-            half4 c = tex2D (_MainTex, IN.uv_MainTex);
-            o.Albedo = c.rgb;
-            o.Alpha = c.a;
-        }
-        ENDCG
+struct appdata {
+    float4 vertex : POSITION;
+    float4 texcoord1 : TEXCOORD1;
+};
 
-        Pass {
-            Name "ShadowCaster"
-            Tags { "LightMode" = "ShadowCaster" }
-        
-            Fog {Mode Off}
-            ZWrite On
-            ZTest LEqual
-            Cull Off
-            Offset 1, 1
+struct v2f { 
+    V2F_SHADOW_COLLECTOR;
+    float kill : TEXCOORD5;
+};
 
-        CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #pragma target 5.0
-            #pragma multi_compile_shadowcaster
-            #include "UnityCG.cginc"
+v2f vert( appdata v )
+{
+    int instance_id = ApplyInstanceTransform(v.vertex, v.texcoord1);
 
-            struct v2f { 
-                V2F_SHADOW_CASTER;
-                float kill : TEXCOORD5;
-            };
+    v2f o;
+    TRANSFER_SHADOW_COLLECTOR(o)
+    o.kill = instance_id >= GetNumInstances();
+    return o;
+}
 
-            v2f vert( appdata_full v )
-            {
-                int instance_id = ApplyInstanceTransform(v.vertex, v.texcoord1);
+fixed4 frag (v2f i) : SV_Target
+{
+    if(i.kill!=0.0f) { discard; }
+    SHADOW_COLLECTOR_FRAGMENT(i)
+}
+ENDCG
 
-                v2f o;
-                TRANSFER_SHADOW_CASTER(o)
-                o.kill = instance_id > GetNumInstances();
-                return o;
-            }
-
-            float4 frag( v2f i ) : SV_Target
-            {
-                if(i.kill!=0.0f) { discard; }
-                SHADOW_CASTER_FRAGMENT(i)
-            }
-        ENDCG
-        }
-
-        Pass {
-            Name "ShadowCollector"
-            Tags { "LightMode" = "ShadowCollector" }
-        
-            Fog {Mode Off}
-            ZWrite On
-            ZTest LEqual
-
-        CGPROGRAM
-            #pragma vertex vert
-            #pragma fragment frag
-            #pragma target 5.0
-            #pragma multi_compile_shadowcollector
-            #define SHADOW_COLLECTOR_PASS
-            #include "UnityCG.cginc"
-
-            struct v2f { 
-                V2F_SHADOW_COLLECTOR;
-                float kill : TEXCOORD5;
-            };
-
-            v2f vert( appdata_full v )
-            {
-                int instance_id = ApplyInstanceTransform(v.vertex, v.texcoord1);
-            
-                v2f o;
-                TRANSFER_SHADOW_COLLECTOR(o)
-                o.kill = instance_id > GetNumInstances();
-                return o;
-            }
-        
-            fixed4 frag (v2f i) : SV_Target
-            {
-                if(i.kill!=0.0f) { discard; }
-                SHADOW_COLLECTOR_FRAGMENT(i)
-            }
-        ENDCG
-        }
     }
-    FallBack "Diffuse"
+}
+Fallback Off
 }
