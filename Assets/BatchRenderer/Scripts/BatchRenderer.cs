@@ -5,40 +5,47 @@ using System.Runtime.InteropServices;
 
 public class BatchRenderer : MonoBehaviour
 {
-    public void AddInstances(Matrix4x4[] instances, int start, int length)
+    public void AddInstances(Vector3[] instances, int start, int length)
     {
         if (m_instance_count >= m_max_instances) return;
         int n = Mathf.Min(length, m_max_instances-m_instance_count);
-        System.Array.Copy(instances, start, m_instances, m_instance_count, n);
+        System.Array.Copy(instances, start, m_instance_positions, m_instance_count, n);
         m_instance_count += n;
     }
-
-    public void AddInstance(Transform trans)
+    public void AddInstance(ref Vector3 pos)
     {
         if (m_instance_count >= m_max_instances) return;
-        m_instances[m_instance_count++] = trans.localToWorldMatrix;
+        m_instance_positions[m_instance_count++] = pos;
     }
 
-    public void AddInstance(ref Vector3 position, ref Quaternion rotation, ref Vector3 scale)
+    public void AddInstances(Matrix4x4[] instances, int start, int length)
     {
         if (m_instance_count >= m_max_instances) return;
-        m_instances[m_instance_count++] = Matrix4x4.TRS(position, rotation, scale);
+        int n = Mathf.Min(length, m_max_instances - m_instance_count);
+        System.Array.Copy(instances, start, m_instance_matrices, m_instance_count, n);
+        m_instance_count += n;
+    }
+    public void AddInstance(ref Matrix4x4 mat)
+    {
+        if (m_instance_count >= m_max_instances) return;
+        m_instance_matrices[m_instance_count++] = mat;
     }
 
-    public ComputeBuffer GetInstanceBuffer() { return m_instance_buffer; }
-    public int GetMaxInstanceCount() { return m_max_instances; }
-    public int GetInstanceCount() { return m_instance_count; }
-    public void SetInstanceCount(int v) { m_instance_count = v; }
 
-
-    public struct MetaData
+    public struct BatchData
     {
         public const int size = 16;
 
         public int num_entities;
         public int begin;
         public int end;
-        int pad2;
+        public int data_type;
+    }
+
+    public enum DataType
+    {
+        Matrix,
+        Position,
     }
 
     public int m_max_instances = 1024 * 16;
@@ -46,17 +53,25 @@ public class BatchRenderer : MonoBehaviour
     public Material m_material;
     public bool m_cast_shadow = false;
     public bool m_receive_shadow = false;
+    public DataType m_data_type;
     public Camera m_camera;
     int m_instances_par_batch;
     int m_instance_count;
     Transform m_trans;
-    MetaData[] m_metadata = new MetaData[1];
     Mesh m_expanded_mesh;
     ComputeBuffer m_instance_buffer;
-    Matrix4x4[] m_instances;
-    List<ComputeBuffer> m_metadata_buffers;
+    BatchData[] m_batch_data = new BatchData[1];
+    Vector3[] m_instance_positions;
+    Matrix4x4[] m_instance_matrices;
+    List<ComputeBuffer> m_batch_data_buffers;
     List<Material> m_materials;
 
+
+    public ComputeBuffer GetInstanceBuffer() { return m_instance_buffer; }
+    public int GetMaxInstanceCount() { return m_max_instances; }
+    public int GetInstanceCount() { return m_instance_count; }
+    public void SetInstanceCount(int v) { m_instance_count = v; }
+    public DataType GetDataType() { return m_data_type; }
 
     public static Mesh CreateExpandedMesh(Mesh mesh)
     {
@@ -108,26 +123,36 @@ public class BatchRenderer : MonoBehaviour
         int num_entities = m_instance_count;
         int num_batches = num_entities / m_instances_par_batch + 1;
 
-        while (m_metadata_buffers.Count < num_batches)
+        while (m_batch_data_buffers.Count < num_batches)
         {
-            ComputeBuffer mb = new ComputeBuffer(1, MetaData.size);
+            ComputeBuffer mb = new ComputeBuffer(1, BatchData.size);
             Material m = new Material(m_material);
-            m.SetBuffer("g_metadata", mb);
-            m.SetBuffer("g_entities", m_instance_buffer);
-            m_metadata_buffers.Add(mb);
+            m.SetBuffer("g_batch_data", mb);
+            m.SetBuffer("g_instance_matrices", m_instance_buffer);
+            m.SetBuffer("g_instance_positions", m_instance_buffer);
+            m_batch_data_buffers.Add(mb);
             m_materials.Add(m);
         }
 
-        m_instance_buffer.SetData(m_instances);
+        switch (m_data_type)
+        {
+            case DataType.Matrix:
+                m_instance_buffer.SetData(m_instance_matrices);
+                break;
+            case DataType.Position:
+                m_instance_buffer.SetData(m_instance_positions);
+                break;
+        }
         Matrix4x4 identity = Matrix4x4.identity;
         for (int i = 0; i * m_instances_par_batch < num_entities; ++i)
         {
             int begin = i * m_instances_par_batch;
             int end = Mathf.Min((i + 1) * m_instances_par_batch, m_instance_count);
-            m_metadata[0].num_entities = num_entities;
-            m_metadata[0].begin = begin;
-            m_metadata[0].end = end;
-            m_metadata_buffers[i].SetData(m_metadata);
+            m_batch_data[0].num_entities = num_entities;
+            m_batch_data[0].begin = begin;
+            m_batch_data[0].end = end;
+            m_batch_data[0].data_type = (int)m_data_type;
+            m_batch_data_buffers[i].SetData(m_batch_data);
             Graphics.DrawMesh(m_expanded_mesh, identity, m_materials[i], 0, m_camera, 0, null, m_cast_shadow, m_receive_shadow);
         }
         m_instance_count = 0;
@@ -139,9 +164,17 @@ public class BatchRenderer : MonoBehaviour
         if (m_mesh == null) return;
 
         m_trans = GetComponent<Transform>();
-        m_instances = new Matrix4x4[m_max_instances];
-        m_metadata_buffers = new List<ComputeBuffer>();
-        m_instance_buffer = new ComputeBuffer(m_max_instances, 64);
+        m_batch_data_buffers = new List<ComputeBuffer>();
+        switch(m_data_type) {
+            case DataType.Matrix:
+                m_instance_matrices = new Matrix4x4[m_max_instances];
+                m_instance_buffer = new ComputeBuffer(m_max_instances, 64);
+                break;
+            case DataType.Position:
+                m_instance_positions = new Vector3[m_max_instances];
+                m_instance_buffer = new ComputeBuffer(m_max_instances, 12);
+                break;
+        }
         m_materials = new List<Material>();
 
         m_instances_par_batch = 65536 / m_mesh.vertexCount;
@@ -151,9 +184,9 @@ public class BatchRenderer : MonoBehaviour
 
     void OnDestroy()
     {
-        if (m_metadata_buffers != null)
+        if (m_batch_data_buffers != null)
         {
-            m_metadata_buffers.ForEach((e) => { e.Release(); });
+            m_batch_data_buffers.ForEach((e) => { e.Release(); });
             m_instance_buffer.Release();
         }
     }
