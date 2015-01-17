@@ -5,47 +5,75 @@ using System.Runtime.InteropServices;
 
 public class BatchRenderer : MonoBehaviour
 {
+    public struct TR
+    {
+        public Vector3 translation;
+        public Quaternion rotation;
+    }
+
     public void AddInstances(Vector3[] instances, int start, int length)
     {
         if (m_instance_count >= m_max_instances) return;
-        int n = Mathf.Min(length, m_max_instances-m_instance_count);
-        System.Array.Copy(instances, start, m_instance_positions, m_instance_count, n);
+        int n = Mathf.Min(length, m_max_instances - m_instance_count);
+        System.Array.Copy(instances, start, m_instance_t, m_instance_count, n);
         m_instance_count += n;
     }
     public void AddInstance(ref Vector3 pos)
     {
         if (m_instance_count >= m_max_instances) return;
-        m_instance_positions[m_instance_count++] = pos;
+        m_instance_t[m_instance_count++] = pos;
+    }
+
+    public void AddInstances(TR[] tr, int start, int length)
+    {
+        if (m_instance_count >= m_max_instances) return;
+        int n = Mathf.Min(length, m_max_instances - m_instance_count);
+        System.Array.Copy(tr, start, m_instance_tr, m_instance_count, n);
+        m_instance_count += n;
+    }
+    public void AddInstance(ref TR tr)
+    {
+        if (m_instance_count >= m_max_instances) return;
+        m_instance_tr[m_instance_count++] = tr;
     }
 
     public void AddInstances(Matrix4x4[] instances, int start, int length)
     {
         if (m_instance_count >= m_max_instances) return;
         int n = Mathf.Min(length, m_max_instances - m_instance_count);
-        System.Array.Copy(instances, start, m_instance_matrices, m_instance_count, n);
+        System.Array.Copy(instances, start, m_instance_trs, m_instance_count, n);
         m_instance_count += n;
     }
     public void AddInstance(ref Matrix4x4 mat)
     {
         if (m_instance_count >= m_max_instances) return;
-        m_instance_matrices[m_instance_count++] = mat;
+        m_instance_trs[m_instance_count++] = mat;
     }
 
 
+    public struct DrawData
+    {
+        public const int size = 20;
+
+        public int data_type;
+        public int num_instances;
+        public Vector3 scale;
+        public Vector3 object_to_camera_direction;
+    }
+
     public struct BatchData
     {
-        public const int size = 16;
+        public const int size = 8;
 
-        public int num_entities;
         public int begin;
         public int end;
-        public int data_type;
     }
 
     public enum DataType
     {
-        Matrix,
         Position,
+        PositionAndRotation,
+        Matrix,
     }
 
     public int m_max_instances = 1024 * 16;
@@ -54,15 +82,19 @@ public class BatchRenderer : MonoBehaviour
     public bool m_cast_shadow = false;
     public bool m_receive_shadow = false;
     public DataType m_data_type;
+    public Vector3 m_scale = Vector3.one;
     public Camera m_camera;
+
     int m_instances_par_batch;
     int m_instance_count;
     Transform m_trans;
     Mesh m_expanded_mesh;
+    ComputeBuffer m_draw_data_buffer;
     ComputeBuffer m_instance_buffer;
-    BatchData[] m_batch_data = new BatchData[1];
-    Vector3[] m_instance_positions;
-    Matrix4x4[] m_instance_matrices;
+    DrawData[] m_draw_data = new DrawData[1];
+    Vector3[] m_instance_t;
+    TR[] m_instance_tr;
+    Matrix4x4[] m_instance_trs;
     List<ComputeBuffer> m_batch_data_buffers;
     List<Material> m_materials;
 
@@ -119,40 +151,56 @@ public class BatchRenderer : MonoBehaviour
             return;
         }
 
+        Camera cam = m_camera != null ? m_camera : Camera.current;
         m_expanded_mesh.bounds = new Bounds(m_trans.position, m_trans.localScale);
-        int num_entities = m_instance_count;
-        int num_batches = num_entities / m_instances_par_batch + 1;
+        int num_instances = m_instance_count;
+        int num_batches = (num_instances / m_instances_par_batch) + (num_instances % m_instances_par_batch != 0 ? 1 : 0);
+
+        m_draw_data[0].data_type = (int)m_data_type;
+        m_draw_data[0].num_instances = num_instances;
+        m_draw_data[0].scale = m_scale;
+        if (cam != null)
+        {
+            m_draw_data[0].object_to_camera_direction = cam.GetComponent<Transform>().forward;
+        }
+        m_draw_data_buffer.SetData(m_draw_data);
 
         while (m_batch_data_buffers.Count < num_batches)
         {
+            int i = m_batch_data_buffers.Count;
             ComputeBuffer mb = new ComputeBuffer(1, BatchData.size);
+            int begin = i * m_instances_par_batch;
+            int end = (i + 1) * m_instances_par_batch;
+            BatchData[] batch_data = new BatchData[1];
+            batch_data[0].begin = begin;
+            batch_data[0].end = end;
+            mb.SetData(batch_data);
+
             Material m = new Material(m_material);
+            m.SetBuffer("g_draw_data", m_draw_data_buffer);
             m.SetBuffer("g_batch_data", mb);
-            m.SetBuffer("g_instance_matrices", m_instance_buffer);
-            m.SetBuffer("g_instance_positions", m_instance_buffer);
+            m.SetBuffer("g_instance_t", m_instance_buffer);
+            m.SetBuffer("g_instance_tr", m_instance_buffer);
+            m.SetBuffer("g_instance_trs", m_instance_buffer);
             m_batch_data_buffers.Add(mb);
             m_materials.Add(m);
         }
 
         switch (m_data_type)
         {
-            case DataType.Matrix:
-                m_instance_buffer.SetData(m_instance_matrices);
-                break;
             case DataType.Position:
-                m_instance_buffer.SetData(m_instance_positions);
+                m_instance_buffer.SetData(m_instance_t);
+                break;
+            case DataType.PositionAndRotation:
+                m_instance_buffer.SetData(m_instance_tr);
+                break;
+            case DataType.Matrix:
+                m_instance_buffer.SetData(m_instance_trs);
                 break;
         }
         Matrix4x4 identity = Matrix4x4.identity;
-        for (int i = 0; i * m_instances_par_batch < num_entities; ++i)
+        for (int i = 0; i * m_instances_par_batch < num_instances; ++i)
         {
-            int begin = i * m_instances_par_batch;
-            int end = Mathf.Min((i + 1) * m_instances_par_batch, m_instance_count);
-            m_batch_data[0].num_entities = num_entities;
-            m_batch_data[0].begin = begin;
-            m_batch_data[0].end = end;
-            m_batch_data[0].data_type = (int)m_data_type;
-            m_batch_data_buffers[i].SetData(m_batch_data);
             Graphics.DrawMesh(m_expanded_mesh, identity, m_materials[i], 0, m_camera, 0, null, m_cast_shadow, m_receive_shadow);
         }
         m_instance_count = 0;
@@ -165,14 +213,19 @@ public class BatchRenderer : MonoBehaviour
 
         m_trans = GetComponent<Transform>();
         m_batch_data_buffers = new List<ComputeBuffer>();
+        m_draw_data_buffer = new ComputeBuffer(1, DrawData.size);
         switch(m_data_type) {
-            case DataType.Matrix:
-                m_instance_matrices = new Matrix4x4[m_max_instances];
-                m_instance_buffer = new ComputeBuffer(m_max_instances, 64);
-                break;
             case DataType.Position:
-                m_instance_positions = new Vector3[m_max_instances];
+                m_instance_t = new Vector3[m_max_instances];
                 m_instance_buffer = new ComputeBuffer(m_max_instances, 12);
+                break;
+            case DataType.PositionAndRotation:
+                m_instance_tr = new TR[m_max_instances];
+                m_instance_buffer = new ComputeBuffer(m_max_instances, 28);
+                break;
+            case DataType.Matrix:
+                m_instance_trs = new Matrix4x4[m_max_instances];
+                m_instance_buffer = new ComputeBuffer(m_max_instances, 64);
                 break;
         }
         m_materials = new List<Material>();
@@ -188,6 +241,7 @@ public class BatchRenderer : MonoBehaviour
         {
             m_batch_data_buffers.ForEach((e) => { e.Release(); });
             m_instance_buffer.Release();
+            m_draw_data_buffer.Release();
         }
     }
 
