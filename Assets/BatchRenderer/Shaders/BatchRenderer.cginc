@@ -58,6 +58,37 @@ float3 extract_position(float4x4 m)
 
 
 
+struct Plane
+{
+    float3 normal;
+    float distance;
+};
+
+struct Ray
+{
+    float3 origin;
+    float3 direction;
+};
+
+float point_plane_distance(Plane plane, float3 pos)
+{
+    return dot(pos, plane.normal) + plane.distance;
+}
+
+float3 ray_plane_intersection(Plane plane, Ray ray)
+{
+    float t = (-dot(ray.origin, plane.normal) - plane.distance) / dot(plane.normal, ray.direction);
+    return ray.origin + ray.direction * t;
+}
+
+float3 project_to_plane(Plane plane, float3 pos)
+{
+    float d = point_plane_distance(plane, pos);
+    return pos - d*plane.normal;
+}
+
+
+
 #ifdef WITH_STRUCTURED_BUFFER
 struct DrawData
 {
@@ -116,47 +147,6 @@ int ApplyInstanceTransform(inout float4 vertex, float2 id)
         vertex.xyz += g_instance_trs[instance_id].translation;
     }
     else if(data_type==3) {
-        vertex = mul(g_instance_matrix[instance_id], vertex);
-    }
-    return instance_id;
-#else
-    return 0;
-#endif
-}
-
-int ApplyInstanceTransformBillboard(inout float4 vertex, float2 id)
-{
-#ifdef WITH_STRUCTURED_BUFFER
-    int data_type = g_draw_data[0].data_type;
-    int instance_id = g_batch_data[0].begin + id.x;
-    vertex.xyz *= g_draw_data[0].scale;
-
-    float3 up = float3(0.0, 1.0, 0.0);
-    if(data_type==0) {
-        float3 pos = g_instance_t[instance_id].translation;
-        float3 look = normalize(_WorldSpaceCameraPos.xyz-pos);
-        vertex = mul(look_matrix(look, up), vertex);
-        vertex.xyz += pos;
-    }
-    else if(data_type==1) {
-        float3 pos = g_instance_t[instance_id].translation;
-        float3 look = normalize(_WorldSpaceCameraPos.xyz-pos);
-        vertex = mul(look_matrix(look, up), vertex);
-        vertex = mul(quaternion_to_matrix(g_instance_tr[instance_id].rotation), vertex);
-        vertex.xyz += pos;
-    }
-    else if(data_type==2) {
-        float3 pos = g_instance_t[instance_id].translation;
-        float3 look = normalize(_WorldSpaceCameraPos.xyz-pos);
-        vertex = mul(look_matrix(look, up), vertex);
-        vertex.xyz *= g_instance_trs[instance_id].scale;
-        vertex = mul(quaternion_to_matrix(g_instance_trs[instance_id].rotation), vertex);
-        vertex.xyz += pos;
-    }
-    else if(data_type==3) {
-        float3 pos = extract_position(g_instance_matrix[instance_id]);
-        float3 look = normalize(_WorldSpaceCameraPos.xyz-pos);
-        vertex = mul(look_matrix(look, up), vertex);
         vertex = mul(g_instance_matrix[instance_id], vertex);
     }
     return instance_id;

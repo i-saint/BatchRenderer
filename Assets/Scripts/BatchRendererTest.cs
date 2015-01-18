@@ -31,7 +31,7 @@ public class BatchRendererTest : MonoBehaviour
         m_instance_trs = new BatchRenderer.TRS[num];
         m_instance_matrix = new Matrix4x4[num];
         Vector3 scale = Vector3.one * 0.9f;
-        Quaternion rot = Quaternion.AngleAxis(45.0f, Vector3.up);
+        Quaternion rot = Quaternion.AngleAxis(45.0f, Vector3.forward);
         for (int i = 0; i < num; ++i)
         {
             Vector3 pos = new Vector3(
