@@ -154,7 +154,7 @@ public class BatchRenderer : MonoBehaviour
     ComputeBuffer m_instance_buffer;
     DrawData[] m_draw_data = new DrawData[1];
     List<ComputeBuffer> m_batch_data_buffers;
-    public List<Material> m_materials;
+    List<Material> m_materials;
 
     Vector3[] m_instance_t;
     TR[] m_instance_tr;
@@ -189,7 +189,6 @@ public class BatchRenderer : MonoBehaviour
             m_data_type_prev = m_data_type;
         }
 
-        Camera cam = m_camera != null ? m_camera : Camera.current;
         m_expanded_mesh.bounds = new Bounds(m_trans.position, m_trans.localScale);
         int num_instances = m_instance_count;
         int num_batches = (num_instances / m_instances_par_batch) + (num_instances % m_instances_par_batch != 0 ? 1 : 0);
@@ -249,7 +248,7 @@ public class BatchRenderer : MonoBehaviour
     {
         Vector3[] vertices_base = mesh.vertices;
         Vector3[] normals_base = (mesh.normals == null || mesh.normals.Length == 0) ? null : mesh.normals;
-        Vector2[] uv_base = (mesh.uv1==null || mesh.uv1.Length==0) ? null : mesh.uv1;
+        Vector2[] uv_base = (mesh.uv == null || mesh.uv.Length == 0) ? null : mesh.uv;
         Color[] colors_base = (mesh.colors == null || mesh.colors.Length == 0) ? null : mesh.colors;
         int[] indices_base = (mesh.triangles==null || mesh.triangles.Length==0) ? null : mesh.triangles;
         int instances_par_batch = max_vertices / mesh.vertexCount;

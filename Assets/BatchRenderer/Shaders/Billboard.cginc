@@ -55,6 +55,7 @@ void ApplyViewPlaneProjection(inout float4 vertex, float3 pos)
     pos = camera_pos + project_to_plane(view_plane, pos-camera_pos);
     float4 vp = mul(UNITY_MATRIX_VP, float4(pos, 1.0));
     vertex.x /= aspect;
+    vertex.y *= -1.0;
     vertex.xy += vp.xy;
     vertex.zw = vp.zw;
 }
@@ -84,6 +85,7 @@ int ApplyViewPlaneBillboardTransform(inout float4 vertex, float2 id)
     else if(data_type==3) {
         float3 pos = extract_position(g_instance_matrix[instance_id]);
         vertex = mul(g_instance_matrix[instance_id], vertex);
+        vertex.xyz -= pos;
         ApplyViewPlaneProjection(vertex, pos);
     }
     return instance_id;
@@ -130,8 +132,9 @@ v2f vert_fixed(appdata_t v)
     return o;
 }
 
-fixed4 frag(v2f i) : SV_Target
+float4 frag(v2f i) : SV_Target
 {
     if(i.kill!=0.0f) { discard; }
-    return tex2D(_MainTex, i.texcoord);
+    float4 color = tex2D(_MainTex, i.texcoord);
+    return color;
 }
