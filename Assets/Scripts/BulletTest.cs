@@ -2,12 +2,10 @@ using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
 
-
 public class BulletTest : MonoBehaviour
 {
     Transform m_trans;
     BulletManager m_bullets;
-
 
     void Awake()
     {

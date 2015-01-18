@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 public class BatchRenderer : MonoBehaviour
 {
@@ -20,8 +21,9 @@ public class BatchRenderer : MonoBehaviour
 
     public void AddInstance(Vector3 pos)
     {
-        if (m_instance_count >= m_max_instances) return;
-        m_instance_t[m_instance_count++] = pos;
+        int i = Interlocked.Increment(ref m_instance_count) - 1;
+        if (i >= m_max_instances) return;
+        m_instance_t[i] = pos;
     }
     public void AddInstances(Vector3[] instances, int start, int length)
     {
@@ -52,8 +54,9 @@ public class BatchRenderer : MonoBehaviour
 
     public void AddInstance(ref TR tr)
     {
-        if (m_instance_count >= m_max_instances) return;
-        m_instance_tr[m_instance_count++] = tr;
+        int i = Interlocked.Increment(ref m_instance_count) - 1;
+        if (i >= m_max_instances) return;
+        m_instance_tr[i] = tr;
     }
     public void AddInstances(TR[] tr, int start, int length)
     {
@@ -70,17 +73,18 @@ public class BatchRenderer : MonoBehaviour
         m_instance_count += n;
     }
 
+    public void AddInstance(ref TRS trs)
+    {
+        int i = Interlocked.Increment(ref m_instance_count) - 1;
+        if (i >= m_max_instances) return;
+        m_instance_trs[i] = trs;
+    }
     public void AddInstances(TRS[] trs, int start, int length)
     {
         if (m_instance_count >= m_max_instances) return;
         int n = Mathf.Min(length, m_max_instances - m_instance_count);
         System.Array.Copy(trs, start, m_instance_trs, m_instance_count, n);
         m_instance_count += n;
-    }
-    public void AddInstance(ref TRS trs)
-    {
-        if (m_instance_count >= m_max_instances) return;
-        m_instance_trs[m_instance_count++] = trs;
     }
     public void AddInstances(int num, System.Action<TRS[], int, int> act)
     {
@@ -90,17 +94,18 @@ public class BatchRenderer : MonoBehaviour
         m_instance_count += n;
     }
 
+    public void AddInstance(ref Matrix4x4 mat)
+    {
+        int i = Interlocked.Increment(ref m_instance_count) - 1;
+        if (i >= m_max_instances) return;
+        m_instance_matrix[i] = mat;
+    }
     public void AddInstances(Matrix4x4[] instances, int start, int length)
     {
         if (m_instance_count >= m_max_instances) return;
         int n = Mathf.Min(length, m_max_instances - m_instance_count);
         System.Array.Copy(instances, start, m_instance_matrix, m_instance_count, n);
         m_instance_count += n;
-    }
-    public void AddInstance(ref Matrix4x4 mat)
-    {
-        if (m_instance_count >= m_max_instances) return;
-        m_instance_matrix[m_instance_count++] = mat;
     }
     public void AddInstances(int num, System.Action<Matrix4x4[], int, int> act)
     {
@@ -144,6 +149,7 @@ public class BatchRenderer : MonoBehaviour
     public bool m_receive_shadow = false;
     public Vector3 m_scale = Vector3.one;
     public Camera m_camera;
+    public bool m_flush_on_LateUpdate = true;
 
     DataType m_data_type_prev;
     int m_instances_par_batch;
@@ -190,7 +196,7 @@ public class BatchRenderer : MonoBehaviour
         }
 
         m_expanded_mesh.bounds = new Bounds(m_trans.position, m_trans.localScale);
-        int num_instances = m_instance_count;
+        int num_instances = Mathf.Min(m_instance_count, m_max_instances);
         int num_batches = (num_instances / m_instances_par_batch) + (num_instances % m_instances_par_batch != 0 ? 1 : 0);
 
         m_draw_data[0].data_type = (int)m_data_type;
@@ -379,7 +385,10 @@ public class BatchRenderer : MonoBehaviour
 
     void LateUpdate()
     {
-        Flush();
+        if (m_flush_on_LateUpdate)
+        {
+            Flush();
+        }
     }
 
     void OnDrawGizmos()
