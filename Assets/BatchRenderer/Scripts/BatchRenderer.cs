@@ -250,38 +250,69 @@ public class BatchRenderer : MonoBehaviour
 
     public static Mesh CreateExpandedMesh(Mesh mesh)
     {
-        Vector3[] vertices_base = mesh.vertices;
-        Vector3[] normals_base = mesh.normals;
-        Vector2[] uv_base = mesh.uv1;
-        int[] indices_base = mesh.triangles;
-        int instances_par_batch = 65536 / mesh.vertexCount;
-        int num_vertices = mesh.vertexCount;
-        int num_indices = indices_base.Length;
+        const int max_vertices = 65000; // Mesh's limitation
 
-        Vector3[] vertices = new Vector3[num_vertices * instances_par_batch];
-        Vector3[] normals = new Vector3[num_vertices * instances_par_batch];
-        Vector2[] uv = new Vector2[num_vertices * instances_par_batch];
-        Vector2[] uv2 = new Vector2[num_vertices * instances_par_batch];
-        int[] indices = new int[num_indices * instances_par_batch];
-        
+        Vector3[] vertices_base = mesh.vertices;
+        Vector3[] normals_base = (mesh.normals == null || mesh.normals.Length == 0) ? null : mesh.normals;
+        Vector2[] uv_base = (mesh.uv1==null || mesh.uv1.Length==0) ? null : mesh.uv1;
+        Color[] colors_base = (mesh.colors == null || mesh.colors.Length == 0) ? null : mesh.colors;
+        int[] indices_base = (mesh.triangles==null || mesh.triangles.Length==0) ? null : mesh.triangles;
+        int instances_par_batch = max_vertices / mesh.vertexCount;
+
+        Vector3[] vertices = new Vector3[vertices_base.Length * instances_par_batch];
+        Vector2[] idata = new Vector2[vertices_base.Length * instances_par_batch];
+        Vector3[] normals = normals_base == null ? null : new Vector3[normals_base.Length * instances_par_batch];
+        Vector2[] uv = uv_base == null ? null : new Vector2[uv_base.Length * instances_par_batch];
+        Color[] colors = colors_base == null ? null : new Color[colors_base.Length * instances_par_batch];
+        int[] indices = indices_base == null ? null : new int[indices_base.Length * instances_par_batch];
+
         for(int ii=0; ii<instances_par_batch; ++ii) {
-            for(int vi = 0; vi<num_vertices; ++vi) {
-                int i = ii*num_vertices + vi;
+            for (int vi = 0; vi < vertices_base.Length; ++vi)
+            {
+                int i = ii * vertices_base.Length + vi;
                 vertices[i] = vertices_base[vi];
-                normals[i] = normals_base[vi];
-                uv[i] = uv_base[vi];
-                uv2[i] = new Vector2((float)ii, (float)vi);
+                idata[i] = new Vector2((float)ii, (float)vi);
             }
-            for(int vi = 0; vi<num_indices; ++vi) {
-                int i = ii*num_indices + vi;
-                indices[i] = ii*num_vertices + indices_base[vi];
+            if (normals != null)
+            {
+                for (int vi = 0; vi < normals_base.Length; ++vi)
+                {
+                    int i = ii * normals_base.Length + vi;
+                    normals[i] = normals_base[vi];
+                }
             }
+            if (uv != null)
+            {
+                for (int vi = 0; vi < uv_base.Length; ++vi)
+                {
+                    int i = ii * uv_base.Length + vi;
+                    uv[i] = uv_base[vi];
+                }
+            }
+            if (colors != null)
+            {
+                for (int vi = 0; vi < colors_base.Length; ++vi)
+                {
+                    int i = ii * colors_base.Length + vi;
+                    colors[i] = colors_base[vi];
+                }
+            }
+            if (indices != null)
+            {
+                for (int vi = 0; vi < indices_base.Length; ++vi)
+                {
+                    int i = ii * indices_base.Length + vi;
+                    indices[i] = ii * vertices_base.Length + indices_base[vi];
+                }
+            }
+
         }
         Mesh ret = new Mesh();
         ret.vertices = vertices;
         ret.normals = normals;
         ret.uv = uv;
-        ret.uv2 = uv2;
+        ret.colors = colors;
+        ret.uv2 = idata;
         ret.triangles = indices;
         return ret;
     }
