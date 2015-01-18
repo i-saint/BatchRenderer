@@ -138,9 +138,9 @@ public class BatchRenderer : MonoBehaviour
     }
 
     [SerializeField] DataType m_data_type;
-    public int m_max_instances = 1024 * 16;
-    public Mesh m_mesh;
-    public Material m_material;
+    [SerializeField] int m_max_instances = 1024 * 16;
+    [SerializeField] Mesh m_mesh;
+    [SerializeField] Material m_material;
     public bool m_cast_shadow = false;
     public bool m_receive_shadow = false;
     public Vector3 m_scale = Vector3.one;
@@ -154,12 +154,13 @@ public class BatchRenderer : MonoBehaviour
     ComputeBuffer m_draw_data_buffer;
     ComputeBuffer m_instance_buffer;
     DrawData[] m_draw_data = new DrawData[1];
+    List<ComputeBuffer> m_batch_data_buffers;
+    List<Material> m_materials;
+
     Vector3[] m_instance_t;
     TR[] m_instance_tr;
     TRS[] m_instance_trs;
     Matrix4x4[] m_instance_matrix;
-    List<ComputeBuffer> m_batch_data_buffers;
-    List<Material> m_materials;
 
 
     public ComputeBuffer GetInstanceBuffer() { return m_instance_buffer; }
@@ -174,44 +175,6 @@ public class BatchRenderer : MonoBehaviour
             m_data_type = v;
             ResetInstanceBuffers();
         }
-    }
-
-    public static Mesh CreateExpandedMesh(Mesh mesh)
-    {
-        Vector3[] vertices_base = mesh.vertices;
-        Vector3[] normals_base = mesh.normals;
-        Vector2[] uv_base = mesh.uv1;
-        int[] indices_base = mesh.triangles;
-        int instances_par_batch = 65536 / mesh.vertexCount;
-        int num_vertices = mesh.vertexCount;
-        int num_indices = indices_base.Length;
-
-        Vector3[] vertices = new Vector3[num_vertices * instances_par_batch];
-        Vector3[] normals = new Vector3[num_vertices * instances_par_batch];
-        Vector2[] uv = new Vector2[num_vertices * instances_par_batch];
-        Vector2[] uv2 = new Vector2[num_vertices * instances_par_batch];
-        int[] indices = new int[num_indices * instances_par_batch];
-        
-        for(int ii=0; ii<instances_par_batch; ++ii) {
-            for(int vi = 0; vi<num_vertices; ++vi) {
-                int i = ii*num_vertices + vi;
-                vertices[i] = vertices_base[vi];
-                normals[i] = normals_base[vi];
-                uv[i] = uv_base[vi];
-                uv2[i] = new Vector2((float)ii, (float)vi);
-            }
-            for(int vi = 0; vi<num_indices; ++vi) {
-                int i = ii*num_indices + vi;
-                indices[i] = ii*num_vertices + indices_base[vi];
-            }
-        }
-        Mesh ret = new Mesh();
-        ret.vertices = vertices;
-        ret.normals = normals;
-        ret.uv = uv;
-        ret.uv2 = uv2;
-        ret.triangles = indices;
-        return ret;
     }
 
     public void Flush()
@@ -282,6 +245,45 @@ public class BatchRenderer : MonoBehaviour
             Graphics.DrawMesh(m_expanded_mesh, identity, m_materials[i], 0, m_camera, 0, null, m_cast_shadow, m_receive_shadow);
         }
         m_instance_count = 0;
+    }
+
+
+    public static Mesh CreateExpandedMesh(Mesh mesh)
+    {
+        Vector3[] vertices_base = mesh.vertices;
+        Vector3[] normals_base = mesh.normals;
+        Vector2[] uv_base = mesh.uv1;
+        int[] indices_base = mesh.triangles;
+        int instances_par_batch = 65536 / mesh.vertexCount;
+        int num_vertices = mesh.vertexCount;
+        int num_indices = indices_base.Length;
+
+        Vector3[] vertices = new Vector3[num_vertices * instances_par_batch];
+        Vector3[] normals = new Vector3[num_vertices * instances_par_batch];
+        Vector2[] uv = new Vector2[num_vertices * instances_par_batch];
+        Vector2[] uv2 = new Vector2[num_vertices * instances_par_batch];
+        int[] indices = new int[num_indices * instances_par_batch];
+        
+        for(int ii=0; ii<instances_par_batch; ++ii) {
+            for(int vi = 0; vi<num_vertices; ++vi) {
+                int i = ii*num_vertices + vi;
+                vertices[i] = vertices_base[vi];
+                normals[i] = normals_base[vi];
+                uv[i] = uv_base[vi];
+                uv2[i] = new Vector2((float)ii, (float)vi);
+            }
+            for(int vi = 0; vi<num_indices; ++vi) {
+                int i = ii*num_indices + vi;
+                indices[i] = ii*num_vertices + indices_base[vi];
+            }
+        }
+        Mesh ret = new Mesh();
+        ret.vertices = vertices;
+        ret.normals = normals;
+        ret.uv = uv;
+        ret.uv2 = uv2;
+        ret.triangles = indices;
+        return ret;
     }
 
     void ResetInstanceBuffers()

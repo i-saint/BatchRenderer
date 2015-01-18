@@ -8,7 +8,7 @@ public class BulletEntity
     public Vector3 position;
     public Vector3 velosity;
     public Quaternion rotation;
-    public float lifetime = 10.0f;
+    public float lifetime;
     public bool is_dead;
 }
 
@@ -17,12 +17,13 @@ public class BulletManager : MonoBehaviour
     public List<BulletEntity> m_eneitites = new List<BulletEntity>();
     BatchRenderer m_renderer;
 
-    public BulletEntity Shoot(Vector3 pos, Vector3 vel)
+    public BulletEntity Shoot(Vector3 pos, Vector3 vel, float lifetime = 10.0f)
     {
         var e = new BulletEntity {
             position = pos,
             velosity = vel,
-            rotation = Quaternion.FromToRotation(pos, pos+vel),
+            rotation = Quaternion.LookRotation(vel),
+            lifetime = lifetime,
             is_dead = false
         };
         m_eneitites.Add(e);
