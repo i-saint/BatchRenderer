@@ -67,17 +67,29 @@ struct BatchData
     int end;
 };
 
-struct TR
+struct InstanceT
+{
+    float3 translation;
+};
+struct InstanceTR
 {
     float3 translation;
     float4 rotation; // quaternion
 };
+struct InstanceTRS
+{
+    float3 translation;
+    float4 rotation; // quaternion
+    float3 scale;
+};
 
-StructuredBuffer<DrawData>  g_draw_data;
-StructuredBuffer<BatchData> g_batch_data;
-StructuredBuffer<float3>    g_instance_t;
-StructuredBuffer<TR>        g_instance_tr;
-StructuredBuffer<float4x4>  g_instance_trs;
+
+StructuredBuffer<DrawData>      g_draw_data;
+StructuredBuffer<BatchData>     g_batch_data;
+StructuredBuffer<InstanceT>     g_instance_t;
+StructuredBuffer<InstanceTR>    g_instance_tr;
+StructuredBuffer<InstanceTRS>   g_instance_trs;
+StructuredBuffer<float4x4>      g_instance_matrix;
 #endif
 
 int ApplyInstanceTransform(inout float4 vertex, float2 id)
@@ -87,14 +99,19 @@ int ApplyInstanceTransform(inout float4 vertex, float2 id)
     int instance_id = g_batch_data[0].begin + id.x;
     vertex.xyz *= g_draw_data[0].scale;
     if(data_type==0) {
-        vertex.xyz += g_instance_t[instance_id];
+        vertex.xyz += g_instance_t[instance_id].translation;
     }
     else if(data_type==1) {
         vertex = mul(quaternion_to_matrix(g_instance_tr[instance_id].rotation), vertex);
         vertex.xyz += g_instance_tr[instance_id].translation;
     }
     else if(data_type==2) {
-        vertex = mul(g_instance_trs[instance_id], vertex);
+        vertex.xyz *= g_instance_trs[instance_id].scale;
+        vertex = mul(quaternion_to_matrix(g_instance_trs[instance_id].rotation), vertex);
+        vertex.xyz += g_instance_trs[instance_id].translation;
+    }
+    else if(data_type==3) {
+        vertex = mul(g_instance_matrix[instance_id], vertex);
     }
     return instance_id;
 #else
