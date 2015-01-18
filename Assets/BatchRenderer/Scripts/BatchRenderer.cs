@@ -118,7 +118,6 @@ public class BatchRenderer : MonoBehaviour
         public int data_type;
         public int num_instances;
         public Vector3 scale;
-        public Vector3 object_to_camera_direction;
     }
 
     public struct BatchData
@@ -155,7 +154,7 @@ public class BatchRenderer : MonoBehaviour
     ComputeBuffer m_instance_buffer;
     DrawData[] m_draw_data = new DrawData[1];
     List<ComputeBuffer> m_batch_data_buffers;
-    List<Material> m_materials;
+    public List<Material> m_materials;
 
     Vector3[] m_instance_t;
     TR[] m_instance_tr;
@@ -198,10 +197,6 @@ public class BatchRenderer : MonoBehaviour
         m_draw_data[0].data_type = (int)m_data_type;
         m_draw_data[0].num_instances = num_instances;
         m_draw_data[0].scale = m_scale;
-        if (cam != null)
-        {
-            m_draw_data[0].object_to_camera_direction = cam.GetComponent<Transform>().forward;
-        }
         m_draw_data_buffer.SetData(m_draw_data);
 
         while (m_batch_data_buffers.Count < num_batches)
@@ -248,10 +243,10 @@ public class BatchRenderer : MonoBehaviour
     }
 
 
+    const int max_vertices = 65000;
+
     public static Mesh CreateExpandedMesh(Mesh mesh)
     {
-        const int max_vertices = 65000; // Mesh's limitation
-
         Vector3[] vertices_base = mesh.vertices;
         Vector3[] normals_base = (mesh.normals == null || mesh.normals.Length == 0) ? null : mesh.normals;
         Vector2[] uv_base = (mesh.uv1==null || mesh.uv1.Length==0) ? null : mesh.uv1;
@@ -365,7 +360,7 @@ public class BatchRenderer : MonoBehaviour
         m_draw_data_buffer = new ComputeBuffer(1, DrawData.size);
         m_materials = new List<Material>();
 
-        m_instances_par_batch = 65536 / m_mesh.vertexCount;
+        m_instances_par_batch = max_vertices / m_mesh.vertexCount;
         m_expanded_mesh = CreateExpandedMesh(m_mesh);
         m_expanded_mesh.UploadMeshData(true);
 
