@@ -5,23 +5,22 @@ using System.Threading;
 
 
 
-[System.Serializable]
-public struct BulletEntity
+public class ExampleBulletManager : MonoBehaviour
 {
-    public Vector3 position;
-    public Vector3 velosity;
-    public Quaternion rotation;
-    public float lifetime;
-    public bool is_dead;
-}
+    [System.Serializable]
+    public struct BulletEntity
+    {
+        public Vector3 position;
+        public Vector3 velosity;
+        public Quaternion rotation;
+        public float lifetime;
+        public bool is_dead;
+    }
 
-public class BulletManager : MonoBehaviour
-{
     public bool m_use_multithread = true;
     public int m_max_entities = 1024 * 8;
-    public int m_max_entities_to_add = 1024;
     public BulletEntity[] m_entities;
-    public BulletEntity[] m_entities_to_add;
+    BulletEntity[] m_entities_to_add;
 
     BatchRenderer m_renderer;
     int m_index;
@@ -42,7 +41,7 @@ public class BulletManager : MonoBehaviour
             is_dead = false
         };
         m_entities_to_add[m_add_index++] = e;
-        m_add_index %= m_max_entities_to_add;
+        m_add_index %= m_entities_to_add.Length;
         return e;
     }
 
@@ -52,7 +51,7 @@ public class BulletManager : MonoBehaviour
         m_renderer = GetComponent<BatchRenderer>();
         m_renderer.m_flush_on_LateUpdate = false;
         m_entities = new BulletEntity[m_max_entities];
-        m_entities_to_add = new BulletEntity[m_max_entities_to_add];
+        m_entities_to_add = new BulletEntity[m_max_entities];
         m_num_tasks = m_max_entities / entities_par_task;
     }
 

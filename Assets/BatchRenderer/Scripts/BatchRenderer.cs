@@ -75,11 +75,12 @@ public class BatchRenderer : MonoBehaviour
     [System.Serializable]
     public struct DrawData
     {
-        public const int size = 20;
+        public const int size = 28;
 
         public int data_flags;
         public int num_instances;
         public Vector3 scale;
+        public Vector2 uv_scale;
     }
 
     [System.Serializable]
@@ -120,6 +121,7 @@ public class BatchRenderer : MonoBehaviour
     public bool m_cast_shadow = false;
     public bool m_receive_shadow = false;
     public Vector3 m_scale = Vector3.one;
+    public Vector2 m_uv_scale = Vector2.one;
     public Camera m_camera;
     public bool m_flush_on_LateUpdate = true;
 
@@ -166,6 +168,7 @@ public class BatchRenderer : MonoBehaviour
         m_draw_data[0].data_flags = data_flags;
         m_draw_data[0].num_instances = num_instances;
         m_draw_data[0].scale = m_scale;
+        m_draw_data[0].uv_scale = m_uv_scale;
         m_draw_data_buffer.SetData(m_draw_data);
 
         while (m_batch_data_buffers.Count < num_batches)

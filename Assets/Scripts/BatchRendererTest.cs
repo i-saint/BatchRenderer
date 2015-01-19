@@ -27,14 +27,15 @@ public class BatchRendererTest : MonoBehaviour
         m_instance_t = new Vector3[num];
         m_instance_r = new Quaternion[num];
         m_instance_s = new Vector3[num];
-        Vector3 scale = Vector3.one * 0.9f;
         Quaternion rot = Quaternion.AngleAxis(45.0f, Vector3.forward);
         for (int i = 0; i < num; ++i)
         {
             Vector3 pos = new Vector3(
-                0.25f * (i / 256) - 16.0f,
+                0.1f * (i / 256) - 12.8f,
                 Random.Range(-1.5f, -0.1f),
-                0.25f * (i % 256) - 16.0f);
+                0.1f * (i % 256) - 12.8f);
+            float s = 1.0f + Mathf.Sin((float)i*0.1f) * 0.5f;
+            Vector3 scale = new Vector3(s,s,s);
             m_instance_t[i] = pos;
             m_instance_r[i] = rot;
             m_instance_s[i] = scale;

@@ -5,12 +5,12 @@ using System.Collections.Generic;
 public class BulletTest : MonoBehaviour
 {
     Transform m_trans;
-    BulletManager m_bullets;
+    ExampleBulletManager m_bullets;
 
     void Awake()
     {
         m_trans = GetComponent<Transform>();
-        m_bullets = GetComponent<BulletManager>();
+        m_bullets = GetComponent<ExampleBulletManager>();
     }
 
     float R(float v)

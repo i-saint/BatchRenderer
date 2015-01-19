@@ -95,6 +95,7 @@ struct DrawData
     int data_flags;
     int num_instances;
     float3 scale;
+    float2 uv_scale;
 };
 
 struct BatchData
@@ -132,6 +133,7 @@ float ApplyInstanceTransform(inout float4 vertex, inout float2 texcoord, float2 
     }
     vertex.xyz += g_instance_t[instance_id];
 
+    texcoord *= g_draw_data[0].uv_scale;
     if(data_flags & (1<<3)) {
         texcoord += g_instance_uv[instance_id];
     }
@@ -167,6 +169,7 @@ float ApplyBillboardTransform(inout float4 vertex, inout float2 texcoord, float2
     vertex.xyz += pos;
     vertex = mul(UNITY_MATRIX_VP, vertex);
 
+    texcoord *= g_draw_data[0].uv_scale;
     if(data_flags & (1<<3)) {
         texcoord += g_instance_uv[instance_id];
     }
@@ -212,6 +215,7 @@ float ApplyViewPlaneBillboardTransform(inout float4 vertex, inout float2 texcoor
     }
     ApplyViewPlaneProjection(vertex, pos);
 
+    texcoord *= g_draw_data[0].uv_scale;
     if(data_flags & (1<<3)) {
         texcoord += g_instance_uv[instance_id];
     }
