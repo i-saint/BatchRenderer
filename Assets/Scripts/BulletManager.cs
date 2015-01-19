@@ -96,7 +96,6 @@ public class BulletManager : MonoBehaviour
     {
         int nth = (int)c;
         float dt = m_delta_time;
-        BatchRenderer.TR tr;
         for (int i = 0; i < entities_par_task; ++i )
         {
             int ei = nth*entities_par_task + i;
@@ -110,9 +109,7 @@ public class BulletManager : MonoBehaviour
             }
             if (!m_entities[ei].is_dead)
             {
-                tr.translation = m_entities[ei].position;
-                tr.rotation = m_entities[ei].rotation;
-                m_renderer.AddInstance(ref tr);
+                m_renderer.AddInstanceTR(m_entities[ei].position, m_entities[ei].rotation);
             }
         }
         Interlocked.Decrement(ref m_num_active_tasks);

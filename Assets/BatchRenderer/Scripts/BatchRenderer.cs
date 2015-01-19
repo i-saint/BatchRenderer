@@ -6,125 +6,83 @@ using System.Threading;
 
 public class BatchRenderer : MonoBehaviour
 {
-    public struct TR
-    {
-        public Vector3 translation;
-        public Quaternion rotation;
-    }
-    public struct TRS
-    {
-        public Vector3 translation;
-        public Quaternion rotation;
-        public Vector3 scale;
-    }
 
-
-    public void AddInstance(Vector3 pos)
+    public void AddInstanceT(Vector3 t)
     {
         int i = Interlocked.Increment(ref m_instance_count) - 1;
-        if (i >= m_max_instances) return;
-        m_instance_t[i] = pos;
+        if (i < m_max_instances)
+        {
+            m_instance_data.translation[i] = t;
+        }
     }
-    public void AddInstances(Vector3[] instances, int start, int length)
+    public void AddInstancesT(Vector3[] t, int start = 0, int length = 0)
     {
-        if (m_instance_count >= m_max_instances) return;
-        int n = Mathf.Min(length, m_max_instances - m_instance_count);
-        System.Array.Copy(instances, start, m_instance_t, m_instance_count, n);
-        m_instance_count += n;
-    }
-    /// <summary>
-    /// example:
-    /// MyEntity[] entities;
-    /// ...
-    /// batch_renderer.AddInstances(entities.Length, (Vector3[] instances, int start, int num)=>{
-    ///     for(int i=0; i<num; ++i) {
-    ///         instances[start+i] = entities[i].GetPosition();
-    ///     }
-    /// });
-    /// </summary>
-    /// <param name="act"></param>
-    /// <param name="length"></param>
-    public void AddInstances(int num, System.Action<Vector3[], int, int> act)
-    {
-        if (m_instance_count >= m_max_instances) return;
-        int n = Mathf.Min(num, m_max_instances - m_instance_count);
-        act.Invoke(m_instance_t, m_instance_count, n);
-        m_instance_count += n;
+        if (length == 0) length = t.Length;
+        int reserved_index;
+        int reserved_num;
+        ReserveInstance(length, out reserved_index, out reserved_num);
+        System.Array.Copy(t, start, m_instance_data.translation, reserved_index, reserved_num);
     }
 
-    public void AddInstance(ref TR tr)
+    public void AddInstanceTR(Vector3 t, Quaternion r)
     {
         int i = Interlocked.Increment(ref m_instance_count) - 1;
-        if (i >= m_max_instances) return;
-        m_instance_tr[i] = tr;
+        if (i < m_max_instances)
+        {
+            m_instance_data.translation[i] = t;
+            m_instance_data.rotation[i] = r;
+        }
     }
-    public void AddInstances(TR[] tr, int start, int length)
+    public void AddInstancesTR(Vector3[] t, Quaternion[] r, int start = 0, int length = 0)
     {
-        if (m_instance_count >= m_max_instances) return;
-        int n = Mathf.Min(length, m_max_instances - m_instance_count);
-        System.Array.Copy(tr, start, m_instance_tr, m_instance_count, n);
-        m_instance_count += n;
-    }
-    public void AddInstances(int num, System.Action<TR[], int, int> act)
-    {
-        if (m_instance_count >= m_max_instances) return;
-        int n = Mathf.Min(num, m_max_instances - m_instance_count);
-        act.Invoke(m_instance_tr, m_instance_count, n);
-        m_instance_count += n;
+        if (length == 0) length = t.Length;
+        int reserved_index;
+        int reserved_num;
+        ReserveInstance(length, out reserved_index, out reserved_num);
+        System.Array.Copy(t, start, m_instance_data.translation, reserved_index, reserved_num);
+        System.Array.Copy(r, start, m_instance_data.rotation, reserved_index, reserved_num);
     }
 
-    public void AddInstance(ref TRS trs)
+    public void AddInstanceTRS(Vector3 t, Quaternion r, Vector3 s)
     {
         int i = Interlocked.Increment(ref m_instance_count) - 1;
-        if (i >= m_max_instances) return;
-        m_instance_trs[i] = trs;
+        if (i < m_max_instances)
+        {
+            m_instance_data.translation[i] = t;
+            m_instance_data.rotation[i] = r;
+            m_instance_data.scale[i] = s;
+        }
     }
-    public void AddInstances(TRS[] trs, int start, int length)
+    public void AddInstancesTRS(Vector3[] t, Quaternion[] r, Vector3[] s, int start = 0, int length = 0)
     {
-        if (m_instance_count >= m_max_instances) return;
-        int n = Mathf.Min(length, m_max_instances - m_instance_count);
-        System.Array.Copy(trs, start, m_instance_trs, m_instance_count, n);
-        m_instance_count += n;
-    }
-    public void AddInstances(int num, System.Action<TRS[], int, int> act)
-    {
-        if (m_instance_count >= m_max_instances) return;
-        int n = Mathf.Min(num, m_max_instances - m_instance_count);
-        act.Invoke(m_instance_trs, m_instance_count, n);
-        m_instance_count += n;
+        if (length == 0) length = t.Length;
+        int reserved_index;
+        int reserved_num;
+        ReserveInstance(length, out reserved_index, out reserved_num);
+        System.Array.Copy(t, start, m_instance_data.translation, reserved_index, reserved_num);
+        System.Array.Copy(r, start, m_instance_data.rotation, reserved_index, reserved_num);
+        System.Array.Copy(s, start, m_instance_data.scale, reserved_index, reserved_num);
     }
 
-    public void AddInstance(ref Matrix4x4 mat)
+    public InstanceData ReserveInstance(int num, out int reserved_index, out int reserved_num)
     {
-        int i = Interlocked.Increment(ref m_instance_count) - 1;
-        if (i >= m_max_instances) return;
-        m_instance_matrix[i] = mat;
-    }
-    public void AddInstances(Matrix4x4[] instances, int start, int length)
-    {
-        if (m_instance_count >= m_max_instances) return;
-        int n = Mathf.Min(length, m_max_instances - m_instance_count);
-        System.Array.Copy(instances, start, m_instance_matrix, m_instance_count, n);
-        m_instance_count += n;
-    }
-    public void AddInstances(int num, System.Action<Matrix4x4[], int, int> act)
-    {
-        if (m_instance_count >= m_max_instances) return;
-        int n = Mathf.Min(num, m_max_instances - m_instance_count);
-        act.Invoke(m_instance_matrix, m_instance_count, n);
-        m_instance_count += n;
+        reserved_index = Interlocked.Add(ref m_instance_count, num) - num;
+        reserved_num = Mathf.Clamp(m_max_instances - reserved_index, 0, num);
+        return m_instance_data;
     }
 
 
+    [System.Serializable]
     public struct DrawData
     {
         public const int size = 20;
 
-        public int data_type;
+        public int data_flags;
         public int num_instances;
         public Vector3 scale;
     }
 
+    [System.Serializable]
     public struct BatchData
     {
         public const int size = 8;
@@ -133,15 +91,29 @@ public class BatchRenderer : MonoBehaviour
         public int end;
     }
 
-    public enum DataType
+    [System.Serializable]
+    public class InstanceData
     {
-        Position,
-        PositionRotation,
-        PositionRotationScale,
-        Matrix,
+        public Vector3[] translation;
+        public Quaternion[] rotation;
+        public Vector3[] scale;
+        public Vector2[] uv_scroll;
+
+        public void Resize(int size)
+        {
+            translation = new Vector3[size];
+            rotation = new Quaternion[size];
+            scale = new Vector3[size];
+            uv_scroll = new Vector2[size];
+        }
     }
 
-    [SerializeField] DataType m_data_type;
+
+
+    public bool m_enable_rotation;
+    public bool m_enable_scale;
+    public bool m_enable_uv_scroll;
+
     [SerializeField] int m_max_instances = 1024 * 16;
     [SerializeField] Mesh m_mesh;
     [SerializeField] Material m_material;
@@ -151,36 +123,29 @@ public class BatchRenderer : MonoBehaviour
     public Camera m_camera;
     public bool m_flush_on_LateUpdate = true;
 
-    DataType m_data_type_prev;
     int m_instances_par_batch;
     int m_instance_count;
     Transform m_trans;
     Mesh m_expanded_mesh;
     ComputeBuffer m_draw_data_buffer;
-    ComputeBuffer m_instance_buffer;
+    ComputeBuffer m_instance_t_buffer;
+    ComputeBuffer m_instance_r_buffer;
+    ComputeBuffer m_instance_s_buffer;
+    ComputeBuffer m_instance_uv_buffer;
     DrawData[] m_draw_data = new DrawData[1];
     List<ComputeBuffer> m_batch_data_buffers;
     List<Material> m_materials;
 
-    Vector3[] m_instance_t;
-    TR[] m_instance_tr;
-    TRS[] m_instance_trs;
-    Matrix4x4[] m_instance_matrix;
+    InstanceData m_instance_data;
 
 
-    public ComputeBuffer GetInstanceBuffer() { return m_instance_buffer; }
+    public ComputeBuffer GetInstanceTBuffer() { return m_instance_t_buffer; }
+    public ComputeBuffer GetInstanceRBuffer() { return m_instance_r_buffer; }
+    public ComputeBuffer GetInstanceSBuffer() { return m_instance_s_buffer; }
+    public ComputeBuffer GetInstanceUVBuffer() { return m_instance_uv_buffer; }
     public int GetMaxInstanceCount() { return m_max_instances; }
     public int GetInstanceCount() { return m_instance_count; }
     public void SetInstanceCount(int v) { m_instance_count = v; }
-    public DataType GetDataType() { return m_data_type; }
-    public void SetDataType(DataType v)
-    {
-        if (m_data_type != v)
-        {
-            m_data_type = v;
-            ResetInstanceBuffers();
-        }
-    }
 
     public void Flush()
     {
@@ -189,17 +154,16 @@ public class BatchRenderer : MonoBehaviour
             m_instance_count = 0;
             return;
         }
-        if (m_data_type != m_data_type_prev)
-        {
-            ResetInstanceBuffers();
-            m_data_type_prev = m_data_type;
-        }
 
         m_expanded_mesh.bounds = new Bounds(m_trans.position, m_trans.localScale);
         int num_instances = Mathf.Min(m_instance_count, m_max_instances);
         int num_batches = (num_instances / m_instances_par_batch) + (num_instances % m_instances_par_batch != 0 ? 1 : 0);
 
-        m_draw_data[0].data_type = (int)m_data_type;
+        int data_flags = 1;
+        if (m_enable_rotation) data_flags |= 1 << 1;
+        if (m_enable_scale) data_flags |= 1 << 2;
+        if (m_enable_uv_scroll) data_flags |= 1 << 3;
+        m_draw_data[0].data_flags = data_flags;
         m_draw_data[0].num_instances = num_instances;
         m_draw_data[0].scale = m_scale;
         m_draw_data_buffer.SetData(m_draw_data);
@@ -216,29 +180,19 @@ public class BatchRenderer : MonoBehaviour
             Material m = new Material(m_material);
             m.SetBuffer("g_draw_data", m_draw_data_buffer);
             m.SetBuffer("g_batch_data", batch_data_buffer);
-            m.SetBuffer("g_instance_t", m_instance_buffer);
-            m.SetBuffer("g_instance_tr", m_instance_buffer);
-            m.SetBuffer("g_instance_trs", m_instance_buffer);
-            m.SetBuffer("g_instance_matrix", m_instance_buffer);
+            m.SetBuffer("g_instance_t", m_instance_t_buffer);
+            m.SetBuffer("g_instance_r", m_instance_r_buffer);
+            m.SetBuffer("g_instance_s", m_instance_s_buffer);
+            m.SetBuffer("g_instance_uv", m_instance_uv_buffer);
             m_materials.Add(m);
             m_batch_data_buffers.Add(batch_data_buffer);
         }
 
-        switch (m_data_type)
-        {
-            case DataType.Position:
-                m_instance_buffer.SetData(m_instance_t);
-                break;
-            case DataType.PositionRotation:
-                m_instance_buffer.SetData(m_instance_tr);
-                break;
-            case DataType.PositionRotationScale:
-                m_instance_buffer.SetData(m_instance_trs);
-                break;
-            case DataType.Matrix:
-                m_instance_buffer.SetData(m_instance_matrix);
-                break;
-        }
+        m_instance_t_buffer.SetData(m_instance_data.translation);
+        if (m_enable_rotation)  { m_instance_r_buffer.SetData(m_instance_data.rotation); }
+        if (m_enable_scale)     { m_instance_s_buffer.SetData(m_instance_data.scale); }
+        if (m_enable_uv_scroll) { m_instance_uv_buffer.SetData(m_instance_data.uv_scroll); }
+
         Matrix4x4 identity = Matrix4x4.identity;
         for (int i = 0; i * m_instances_par_batch < num_instances; ++i)
         {
@@ -317,70 +271,50 @@ public class BatchRenderer : MonoBehaviour
         return ret;
     }
 
-    void ResetInstanceBuffers()
+    void ReleaseBuffers()
     {
-        m_instance_t = null;
-        m_instance_tr = null;
-        m_instance_trs = null;
-        m_instance_matrix = null;
-        if (m_instance_buffer != null)
-        {
-            m_instance_buffer.Release();
-            m_instance_buffer = null;
-        }
-        switch (m_data_type)
-        {
-            case DataType.Position:
-                m_instance_t = new Vector3[m_max_instances];
-                m_instance_buffer = new ComputeBuffer(m_max_instances, 12);
-                break;
-            case DataType.PositionRotation:
-                m_instance_tr = new TR[m_max_instances];
-                m_instance_buffer = new ComputeBuffer(m_max_instances, 28);
-                break;
-            case DataType.PositionRotationScale:
-                m_instance_trs = new TRS[m_max_instances];
-                m_instance_buffer = new ComputeBuffer(m_max_instances, 40);
-                break;
-            case DataType.Matrix:
-                m_instance_matrix = new Matrix4x4[m_max_instances];
-                m_instance_buffer = new ComputeBuffer(m_max_instances, 64);
-                break;
-        }
-        m_materials.ForEach(e => {
-            e.SetBuffer("g_instance_t", m_instance_buffer);
-            e.SetBuffer("g_instance_tr", m_instance_buffer);
-            e.SetBuffer("g_instance_trs", m_instance_buffer);
-            e.SetBuffer("g_instance_matrix", m_instance_buffer);
-        });
+        if (m_draw_data_buffer != null) { m_draw_data_buffer.Release(); m_draw_data_buffer = null; }
+        if (m_instance_t_buffer != null) { m_instance_t_buffer.Release(); m_instance_t_buffer = null; }
+        if (m_instance_r_buffer != null) { m_instance_r_buffer.Release(); m_instance_r_buffer = null; }
+        if (m_instance_s_buffer != null) { m_instance_s_buffer.Release(); m_instance_s_buffer = null; }
+        if (m_instance_uv_buffer != null) { m_instance_uv_buffer.Release(); m_instance_uv_buffer = null; }
+        m_batch_data_buffers.ForEach((e) => { e.Release(); });
+        m_batch_data_buffers.Clear();
+        m_materials.Clear();
+    }
+
+    void ResetBuffers()
+    {
+        ReleaseBuffers();
+
+        m_instance_data.Resize(m_max_instances);
+        m_draw_data_buffer = new ComputeBuffer(1, DrawData.size);
+        m_instance_t_buffer = new ComputeBuffer(m_max_instances, 12);
+        m_instance_r_buffer = new ComputeBuffer(m_max_instances, 16);
+        m_instance_s_buffer = new ComputeBuffer(m_max_instances, 12);
+        m_instance_uv_buffer = new ComputeBuffer(m_max_instances, 8);
     }
 
 
-    void Start()
+    void OnEnable()
     {
         if (m_mesh == null) return;
 
         m_trans = GetComponent<Transform>();
         m_batch_data_buffers = new List<ComputeBuffer>();
-        m_draw_data_buffer = new ComputeBuffer(1, DrawData.size);
         m_materials = new List<Material>();
+        m_instance_data = new InstanceData();
 
         m_instances_par_batch = max_vertices / m_mesh.vertexCount;
         m_expanded_mesh = CreateExpandedMesh(m_mesh);
         m_expanded_mesh.UploadMeshData(true);
 
-        ResetInstanceBuffers();
-        m_data_type_prev = m_data_type;
+        ResetBuffers();
     }
 
-    void OnDestroy()
+    void OnDisable()
     {
-        if (m_batch_data_buffers != null)
-        {
-            m_batch_data_buffers.ForEach((e) => { e.Release(); });
-            m_instance_buffer.Release();
-            m_draw_data_buffer.Release();
-        }
+        ReleaseBuffers();
     }
 
     void LateUpdate()

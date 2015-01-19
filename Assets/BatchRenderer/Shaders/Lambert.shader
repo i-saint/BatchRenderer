@@ -26,10 +26,10 @@ void vert (inout appdata_full v, out Input o)
 {
     UNITY_INITIALIZE_OUTPUT(Input,o);
 
-    int instance_id = ApplyInstanceTransform(v.vertex, v.texcoord1);
+    float k = ApplyInstanceTransform(v.vertex, v.texcoord.xy, v.texcoord1);
 
     o.uv_MainTex = v.texcoord;
-    o.kill = instance_id >= GetNumInstances();
+    o.kill = k;
 }
 
 void surf (Input IN, inout SurfaceOutput o)

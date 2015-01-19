@@ -22,7 +22,8 @@ CGPROGRAM
 
 struct appdata {
     float4 vertex : POSITION;
-    float4 texcoord1 : TEXCOORD1;
+    float2 texcoord : TEXCOORD0;
+    float2 texcoord1 : TEXCOORD1;
 };
 
 struct v2f {
@@ -32,11 +33,11 @@ struct v2f {
 
 v2f vert( appdata v )
 {
-    int instance_id = ApplyInstanceTransform(v.vertex, v.texcoord1);
+    float k = ApplyInstanceTransform(v.vertex, v.texcoord, v.texcoord1);
 
     v2f o;
     TRANSFER_SHADOW_CASTER(o)
-    o.kill = instance_id >= GetNumInstances();
+    o.kill = k;
     return o;
 }
 
@@ -68,7 +69,8 @@ CGPROGRAM
 
 struct appdata {
     float4 vertex : POSITION;
-    float4 texcoord1 : TEXCOORD1;
+    float2 texcoord : TEXCOORD0;
+    float2 texcoord1 : TEXCOORD1;
 };
 
 struct v2f { 
@@ -78,11 +80,11 @@ struct v2f {
 
 v2f vert( appdata v )
 {
-    int instance_id = ApplyInstanceTransform(v.vertex, v.texcoord1);
+    float k = ApplyInstanceTransform(v.vertex, v.texcoord, v.texcoord1);
 
     v2f o;
     TRANSFER_SHADOW_COLLECTOR(o)
-    o.kill = instance_id >= GetNumInstances();
+    o.kill = k;
     return o;
 }
 

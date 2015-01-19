@@ -92,7 +92,7 @@ float3 project_to_plane(Plane plane, float3 pos)
 #ifdef WITH_STRUCTURED_BUFFER
 struct DrawData
 {
-    int data_type;
+    int data_flags;
     int num_instances;
     float3 scale;
 };
@@ -103,63 +103,120 @@ struct BatchData
     int end;
 };
 
-struct InstanceT
-{
-    float3 translation;
-};
-struct InstanceTR
-{
-    float3 translation;
-    float4 rotation; // quaternion
-};
-struct InstanceTRS
-{
-    float3 translation;
-    float4 rotation; // quaternion
-    float3 scale;
-};
 
 
 StructuredBuffer<DrawData>      g_draw_data;
 StructuredBuffer<BatchData>     g_batch_data;
-StructuredBuffer<InstanceT>     g_instance_t;
-StructuredBuffer<InstanceTR>    g_instance_tr;
-StructuredBuffer<InstanceTRS>   g_instance_trs;
-StructuredBuffer<float4x4>      g_instance_matrix;
+StructuredBuffer<float3>        g_instance_t;
+StructuredBuffer<float4>        g_instance_r;
+StructuredBuffer<float3>        g_instance_s;
+StructuredBuffer<float2>        g_instance_uv;
 #endif
 
-int ApplyInstanceTransform(inout float4 vertex, float2 id)
+float ApplyInstanceTransform(inout float4 vertex, inout float2 texcoord, float2 id)
 {
 #ifdef WITH_STRUCTURED_BUFFER
-    int data_type = g_draw_data[0].data_type;
     int instance_id = g_batch_data[0].begin + id.x;
+    if(instance_id >= g_draw_data[0].num_instances) {
+        return 1.0;
+    }
+
+    int data_flags = g_draw_data[0].data_flags;
+
     vertex.xyz *= g_draw_data[0].scale;
-    if(data_type==0) {
-        vertex.xyz += g_instance_t[instance_id].translation;
+    if(data_flags & (1<<2)) {
+        vertex.xyz *= g_instance_s[instance_id];
     }
-    else if(data_type==1) {
-        vertex = mul(quaternion_to_matrix(g_instance_tr[instance_id].rotation), vertex);
-        vertex.xyz += g_instance_tr[instance_id].translation;
+    if(data_flags & (1<<1)) {
+        vertex = mul(quaternion_to_matrix(g_instance_r[instance_id]), vertex);
     }
-    else if(data_type==2) {
-        vertex.xyz *= g_instance_trs[instance_id].scale;
-        vertex = mul(quaternion_to_matrix(g_instance_trs[instance_id].rotation), vertex);
-        vertex.xyz += g_instance_trs[instance_id].translation;
+    vertex.xyz += g_instance_t[instance_id];
+
+    if(data_flags & (1<<3)) {
+        texcoord += g_instance_uv[instance_id];
     }
-    else if(data_type==3) {
-        vertex = mul(g_instance_matrix[instance_id], vertex);
-    }
-    return instance_id;
+    return 0.0;
 #else
-    return 0;
+    return 1.0;
 #endif
 }
 
-int GetNumInstances()
+
+float ApplyBillboardTransform(inout float4 vertex, inout float2 texcoord, float2 id)
 {
 #ifdef WITH_STRUCTURED_BUFFER
-    return g_draw_data[0].num_instances;
+    int instance_id = g_batch_data[0].begin + id.x;
+    if(instance_id >= g_draw_data[0].num_instances) {
+        return 1.0;
+    }
+
+    int data_flags = g_draw_data[0].data_flags;
+    float3 up = float3(0.0, 1.0, 0.0);
+    float3 camera_pos = _WorldSpaceCameraPos.xyz;
+    float3 pos = g_instance_t[instance_id];
+    float3 look = normalize(camera_pos-pos);
+
+    vertex.xyz *= g_draw_data[0].scale;
+    if(data_flags & (1<<2)) {
+        vertex.xyz *= g_instance_s[instance_id];
+    }
+    vertex = mul(look_matrix(look, up), vertex);
+    if(data_flags & (1<<1)) {
+        vertex = mul(quaternion_to_matrix(g_instance_r[instance_id]), vertex);
+    }
+    vertex.xyz += pos;
+    vertex = mul(UNITY_MATRIX_VP, vertex);
+
+    if(data_flags & (1<<3)) {
+        texcoord += g_instance_uv[instance_id];
+    }
+    return 0.0;
 #else
-    return 0;
+    return 1.0;
+#endif
+}
+
+
+float g_view_plane_distance;
+
+void ApplyViewPlaneProjection(inout float4 vertex, float3 pos)
+{
+    float aspect = _ScreenParams.x / _ScreenParams.y;
+    float3 camera_pos = _WorldSpaceCameraPos.xyz;
+    float3 look = normalize(camera_pos-pos);
+    Plane view_plane = {look, g_view_plane_distance};
+    pos = camera_pos + project_to_plane(view_plane, pos-camera_pos);
+    float4 vp = mul(UNITY_MATRIX_VP, float4(pos, 1.0));
+    vertex.x /= aspect;
+    vertex.y *= -1.0;
+    vertex.xy += vp.xy;
+    vertex.zw = vp.zw;
+}
+
+float ApplyViewPlaneBillboardTransform(inout float4 vertex, inout float2 texcoord, float2 id)
+{
+#ifdef WITH_STRUCTURED_BUFFER
+    int instance_id = g_batch_data[0].begin + id.x;
+    if(instance_id >= g_draw_data[0].num_instances) {
+        return 1.0;
+    }
+
+    int data_flags = g_draw_data[0].data_flags;
+    float3 pos = g_instance_t[instance_id];
+    vertex.xyz *= g_draw_data[0].scale;
+    if(data_flags & (1<<2)) {
+        vertex.xyz *= g_instance_s[instance_id];
+    }
+    if(data_flags & (1<<1)) {
+        vertex = mul(quaternion_to_matrix(g_instance_r[instance_id]), vertex);
+    }
+    ApplyViewPlaneProjection(vertex, pos);
+
+    if(data_flags & (1<<3)) {
+        texcoord += g_instance_uv[instance_id];
+    }
+    return 0.0;
+#else
+    return 1.0;
 #endif
 }
