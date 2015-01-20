@@ -5,6 +5,7 @@ sampler2D _MainTex;
 
 struct appdata_t {
     float4 vertex : POSITION;
+    float3 normal : NORMAL;
     float2 texcoord : TEXCOORD0;
     float2 texcoord1 : TEXCOORD1;
 };
@@ -17,7 +18,7 @@ struct v2f {
 
 v2f vert(appdata_t v)
 {
-    float k = ApplyBillboardTransform(v.vertex, v.texcoord, v.texcoord1);
+    float k = ApplyBillboardTransform(v.vertex, v.normal, v.texcoord, v.texcoord1);
 
     v2f o;
     o.vertex = v.vertex;
@@ -28,7 +29,7 @@ v2f vert(appdata_t v)
 
 v2f vert_fixed(appdata_t v)
 {
-    float k = ApplyViewPlaneBillboardTransform(v.vertex, v.texcoord, v.texcoord1);
+    float k = ApplyViewPlaneBillboardTransform(v.vertex, v.normal, v.texcoord, v.texcoord1);
 
     v2f o;
     o.vertex = v.vertex;

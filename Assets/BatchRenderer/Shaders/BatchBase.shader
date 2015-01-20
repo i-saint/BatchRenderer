@@ -22,6 +22,7 @@ CGPROGRAM
 
 struct appdata {
     float4 vertex : POSITION;
+    float3 normal : NORMAL;
     float2 texcoord : TEXCOORD0;
     float2 texcoord1 : TEXCOORD1;
 };
@@ -33,7 +34,7 @@ struct v2f {
 
 v2f vert( appdata v )
 {
-    float k = ApplyInstanceTransform(v.vertex, v.texcoord, v.texcoord1);
+    float k = ApplyInstanceTransform(v.vertex, v.normal, v.texcoord, v.texcoord1);
 
     v2f o;
     TRANSFER_SHADOW_CASTER(o)
@@ -69,6 +70,7 @@ CGPROGRAM
 
 struct appdata {
     float4 vertex : POSITION;
+    float3 normal : NORMAL;
     float2 texcoord : TEXCOORD0;
     float2 texcoord1 : TEXCOORD1;
 };
@@ -80,7 +82,7 @@ struct v2f {
 
 v2f vert( appdata v )
 {
-    float k = ApplyInstanceTransform(v.vertex, v.texcoord, v.texcoord1);
+    float k = ApplyInstanceTransform(v.vertex, v.normal, v.texcoord, v.texcoord1);
 
     v2f o;
     TRANSFER_SHADOW_COLLECTOR(o)

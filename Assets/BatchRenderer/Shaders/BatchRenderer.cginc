@@ -114,7 +114,7 @@ StructuredBuffer<float3>        g_instance_s;
 StructuredBuffer<float2>        g_instance_uv;
 #endif
 
-float ApplyInstanceTransform(inout float4 vertex, inout float2 texcoord, float2 id)
+float ApplyInstanceTransform(inout float4 vertex, inout float3 normal, inout float2 texcoord, float2 id)
 {
 #ifdef WITH_STRUCTURED_BUFFER
     int instance_id = g_batch_data[0].begin + id.x;
@@ -129,7 +129,9 @@ float ApplyInstanceTransform(inout float4 vertex, inout float2 texcoord, float2 
         vertex.xyz *= g_instance_s[instance_id];
     }
     if(data_flags & (1<<1)) {
-        vertex = mul(quaternion_to_matrix(g_instance_r[instance_id]), vertex);
+        float4x4 rot = quaternion_to_matrix(g_instance_r[instance_id]);
+        vertex = mul(rot, vertex);
+        normal = mul(rot, normal);
     }
     vertex.xyz += g_instance_t[instance_id];
 
@@ -144,7 +146,7 @@ float ApplyInstanceTransform(inout float4 vertex, inout float2 texcoord, float2 
 }
 
 
-float ApplyBillboardTransform(inout float4 vertex, inout float2 texcoord, float2 id)
+float ApplyBillboardTransform(inout float4 vertex, inout float3 normal, inout float2 texcoord, float2 id)
 {
 #ifdef WITH_STRUCTURED_BUFFER
     int instance_id = g_batch_data[0].begin + id.x;
@@ -164,7 +166,9 @@ float ApplyBillboardTransform(inout float4 vertex, inout float2 texcoord, float2
     }
     vertex = mul(look_matrix(look, up), vertex);
     if(data_flags & (1<<1)) {
-        vertex = mul(quaternion_to_matrix(g_instance_r[instance_id]), vertex);
+        float4x4 rot = quaternion_to_matrix(g_instance_r[instance_id]);
+        vertex = mul(rot, vertex);
+        normal = mul(rot, normal);
     }
     vertex.xyz += pos;
     vertex = mul(UNITY_MATRIX_VP, vertex);
@@ -196,7 +200,7 @@ void ApplyViewPlaneProjection(inout float4 vertex, float3 pos)
     vertex.zw = vp.zw;
 }
 
-float ApplyViewPlaneBillboardTransform(inout float4 vertex, inout float2 texcoord, float2 id)
+float ApplyViewPlaneBillboardTransform(inout float4 vertex, inout float3 normal, inout float2 texcoord, float2 id)
 {
 #ifdef WITH_STRUCTURED_BUFFER
     int instance_id = g_batch_data[0].begin + id.x;
@@ -211,7 +215,9 @@ float ApplyViewPlaneBillboardTransform(inout float4 vertex, inout float2 texcoor
         vertex.xyz *= g_instance_s[instance_id];
     }
     if(data_flags & (1<<1)) {
-        vertex = mul(quaternion_to_matrix(g_instance_r[instance_id]), vertex);
+        float4x4 rot = quaternion_to_matrix(g_instance_r[instance_id]);
+        vertex = mul(rot, vertex);
+        normal = mul(rot, normal);
     }
     ApplyViewPlaneProjection(vertex, pos);
 
