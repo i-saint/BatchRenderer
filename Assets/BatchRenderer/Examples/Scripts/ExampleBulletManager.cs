@@ -150,6 +150,7 @@ public class ExampleBulletManager : MonoBehaviour
         int ti = (int)c;
         float dt = m_work_data.delta_time;
         int num_active_entities = 0;
+        Vector3 scale = Vector3.one;
         for (int i = 0; i < entities_par_task; ++i )
         {
             int bi = ti*entities_par_task + i;
@@ -170,7 +171,9 @@ public class ExampleBulletManager : MonoBehaviour
                 }
             }
 
+            //m_renderer.AddInstanceT(m_entities[bi].position);
             m_renderer.AddInstanceTR(m_entities[bi].position, m_entities[bi].rotation);
+            //m_renderer.AddInstanceTRS(m_entities[bi].position, m_entities[bi].rotation, scale);
         }
         m_task_work_data[ti].num_active_entities = num_active_entities;
 

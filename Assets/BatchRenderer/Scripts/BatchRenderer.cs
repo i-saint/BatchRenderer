@@ -118,6 +118,7 @@ public class BatchRenderer : MonoBehaviour
     [SerializeField] int m_max_instances = 1024 * 16;
     [SerializeField] Mesh m_mesh;
     [SerializeField] Material m_material;
+    public LayerMask m_layer = 1;
     public bool m_cast_shadow = false;
     public bool m_receive_shadow = false;
     public Vector3 m_scale = Vector3.one;
@@ -199,7 +200,7 @@ public class BatchRenderer : MonoBehaviour
         Matrix4x4 identity = Matrix4x4.identity;
         for (int i = 0; i * m_instances_par_batch < num_instances; ++i)
         {
-            Graphics.DrawMesh(m_expanded_mesh, identity, m_materials[i], 0, m_camera, 0, null, m_cast_shadow, m_receive_shadow);
+            Graphics.DrawMesh(m_expanded_mesh, identity, m_materials[i], m_layer, m_camera, 0, null, m_cast_shadow, m_receive_shadow);
         }
         m_instance_count = 0;
     }
