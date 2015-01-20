@@ -105,6 +105,7 @@ public class BatchRenderer : MonoBehaviour
             translation = new Vector3[size];
             rotation = new Quaternion[size];
             scale = new Vector3[size];
+            for (int i = 0; i < scale.Length; ++i) { scale[i] = Vector3.one; }
             uv_scroll = new Vector2[size];
         }
     }

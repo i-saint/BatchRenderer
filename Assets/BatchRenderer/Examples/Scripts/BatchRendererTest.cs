@@ -59,8 +59,11 @@ public class BatchRendererTest : MonoBehaviour
 
     void DataTransfer_SingleCopy()
     {
-        //int num = Mathf.Min(m_num_draw, m_instance_matrix.Length);
-
+        int num = Mathf.Min(m_num_draw, m_instance_t.Length);
+        for (int i = 0; i < num; ++i )
+        {
+            m_renderer.AddInstanceT(m_instance_t[i]);
+        }
     }
 
     void DataTransfer_ArrayCopy()
