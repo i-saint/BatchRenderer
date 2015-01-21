@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 
 
 public class BatchRendererTest : MonoBehaviour
@@ -11,12 +12,25 @@ public class BatchRendererTest : MonoBehaviour
         ArrayCopy,
         ReserveAndWrite,
     }
+    public struct Range
+    {
+        public int begin;
+        public int end;
+    }
+
     public int m_num_draw;
+    public bool m_enable_animation = true;
+    public bool m_enable_multithread = true;
+    public int m_task_block_size = 2048;
     public DataTransferMode m_transfer_mode;
     BatchRenderer m_renderer;
     Vector3[] m_instance_t;
     Quaternion[] m_instance_r;
     Vector3[] m_instance_s;
+    float m_time;
+    int m_num_active_tasks;
+
+    public Camera m_camera;
 
     void Awake()
     {
@@ -44,50 +58,134 @@ public class BatchRendererTest : MonoBehaviour
 
     void Update()
     {
-        switch(m_transfer_mode) {
+        CameraControl();
+
+        m_num_draw = Mathf.Min(m_num_draw, m_instance_t.Length);
+        m_time = Time.realtimeSinceStartup;
+        int num = m_num_draw;
+        if (m_enable_multithread)
+        {
+            for (int i = 0; i < num; i += m_task_block_size)
+            {
+                Interlocked.Increment(ref m_num_active_tasks);
+                ThreadPool.QueueUserWorkItem(
+                    UpdateTask,
+                    new Range { begin = i, end = Mathf.Min(i + m_task_block_size, num) });
+            }
+            while (m_num_active_tasks != 0) { }
+        }
+        else
+        {
+            Interlocked.Increment(ref m_num_active_tasks);
+            UpdateTask(new Range { begin = 0, end = num });
+        }
+        m_renderer.Flush();
+    }
+
+
+    void CameraControl()
+    {
+        Camera cam = m_camera;
+        if (cam == null) return;
+
+        Vector3 pos = cam.transform.position;
+        if (Input.GetMouseButton(0))
+        {
+            float ry = Input.GetAxis("Mouse X") * 3.0f;
+            float rxz = Input.GetAxis("Mouse Y") * 0.25f;
+            pos = Quaternion.Euler(0.0f, ry, 0) * pos;
+            pos.y += rxz;
+        }
+        {
+            float wheel = Input.GetAxis("Mouse ScrollWheel");
+            pos += pos.normalized * wheel * 4.0f;
+        }
+        cam.transform.position = pos;
+        cam.transform.LookAt(new Vector3(0.0f, -2.0f, 0.0f));
+    }
+
+    void UpdateTask(System.Object arg)
+    {
+        Range r = (Range)arg;
+        float time = m_time;
+
+        if (m_enable_animation)
+        {
+            Vector3 axis = Vector3.forward;
+            for (int i = r.begin; i < r.end; ++i)
+            {
+                Quaternion rot = Quaternion.AngleAxis(45.0f + time * 180.0f + (float)i * 0.01f, axis);
+                float s = 1.0f + Mathf.Sin(time * 10.0f + (float)i * 0.1f) * 0.5f;
+                Vector3 scale = new Vector3(s, s, s);
+                m_instance_r[i] = rot;
+                m_instance_s[i] = scale;
+            }
+        }
+        switch (m_transfer_mode)
+        {
             case DataTransferMode.SingleCopy:
-                DataTransfer_SingleCopy();
+                DataTransfer_SingleCopy(r);
                 break;
             case DataTransferMode.ArrayCopy:
-                DataTransfer_ArrayCopy();
+                DataTransfer_ArrayCopy(r);
                 break;
             case DataTransferMode.ReserveAndWrite:
-                DataTransfer_ReserveAndWrite();
+                DataTransfer_ReserveAndWrite(r);
                 break;
         }
+        Interlocked.Decrement(ref m_num_active_tasks);
     }
 
-    void DataTransfer_SingleCopy()
+    void DataTransfer_SingleCopy(Range r)
     {
-        int num = Mathf.Min(m_num_draw, m_instance_t.Length);
-        for (int i = 0; i < num; ++i )
+        if (m_renderer.m_enable_scale)
         {
-            m_renderer.AddInstanceT(m_instance_t[i]);
+            for (int i = r.begin; i < r.end; ++i)
+            {
+                m_renderer.AddInstanceTRS(m_instance_t[i], m_instance_r[i], m_instance_s[i]);
+            }
+        }
+        else if (m_renderer.m_enable_rotation)
+        {
+            for (int i = r.begin; i < r.end; ++i)
+            {
+                m_renderer.AddInstanceTR(m_instance_t[i], m_instance_r[i]);
+            }
+        }
+        else
+        {
+            for (int i = r.begin; i < r.end; ++i)
+            {
+                m_renderer.AddInstanceT(m_instance_t[i]);
+            }
         }
     }
 
-    void DataTransfer_ArrayCopy()
+    void DataTransfer_ArrayCopy(Range r)
     {
-        int num = Mathf.Min(m_num_draw, m_instance_t.Length);
-        int reserved_index;
-        int reserved_num;
-        BatchRenderer.InstanceData data = m_renderer.ReserveInstance(num, out reserved_index, out reserved_num);
-        System.Array.Copy(data.translation, 0, m_instance_t, reserved_index, reserved_num);
-        if (m_renderer.m_enable_rotation) System.Array.Copy(data.rotation, 0, m_instance_r, reserved_index, reserved_num);
-        if (m_renderer.m_enable_scale) System.Array.Copy(data.scale, 0, m_instance_s, reserved_index, reserved_num);
+        int num = r.end - r.begin;
+        if (m_renderer.m_enable_scale)
+        {
+            m_renderer.AddInstancesTRS(m_instance_t, m_instance_r, m_instance_s, r.begin, num);
+        }
+        else if (m_renderer.m_enable_rotation)
+        {
+            m_renderer.AddInstancesTR(m_instance_t, m_instance_r, r.begin, num);
+        }
+        else
+        {
+            m_renderer.AddInstancesT(m_instance_t, r.begin, num);
+        }
     }
 
-    void DataTransfer_ReserveAndWrite()
+    void DataTransfer_ReserveAndWrite(Range r)
     {
-        int num = Mathf.Min(m_num_draw, m_instance_t.Length);
+        int num = r.end - r.begin;
         int reserved_index;
         int reserved_num;
         BatchRenderer.InstanceData data = m_renderer.ReserveInstance(num, out reserved_index, out reserved_num);
-        for (int i = 0; i < num; ++i)
-        {
-            data.translation[reserved_index + i] = m_instance_t[i];
-            data.rotation[reserved_index + i] = m_instance_r[i];
-            data.scale[reserved_index + i] = m_instance_s[i];
-        }
+        System.Array.Copy(m_instance_t, r.begin, data.translation, reserved_index, reserved_num);
+        System.Array.Copy(m_instance_r, r.begin, data.rotation, reserved_index, reserved_num);
+        System.Array.Copy(m_instance_s, r.begin, data.scale, reserved_index, reserved_num);
     }
 }

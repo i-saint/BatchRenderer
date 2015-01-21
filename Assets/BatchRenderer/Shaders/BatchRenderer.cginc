@@ -93,6 +93,7 @@ float3 project_to_plane(Plane plane, float3 pos)
 struct DrawData
 {
     int data_flags;
+    int num_max_instances;
     int num_instances;
     float3 scale;
     float2 uv_scale;

@@ -75,9 +75,10 @@ public class BatchRenderer : MonoBehaviour
     [System.Serializable]
     public struct DrawData
     {
-        public const int size = 28;
+        public const int size = 32;
 
         public int data_flags;
+        public int num_max_instances;
         public int num_instances;
         public Vector3 scale;
         public Vector2 uv_scale;
@@ -126,6 +127,7 @@ public class BatchRenderer : MonoBehaviour
     public Vector2 m_uv_scale = Vector2.one;
     public Camera m_camera;
     public bool m_flush_on_LateUpdate = true;
+    public bool m_update_buffers_externally = false;
 
     int m_instances_par_batch;
     int m_instance_count;
@@ -151,27 +153,40 @@ public class BatchRenderer : MonoBehaviour
     public int GetInstanceCount() { return m_instance_count; }
     public void SetInstanceCount(int v) { m_instance_count = v; }
 
+    public void UpdateBuffers()
+    {
+        int data_flags = 1;
+        if (m_enable_rotation) data_flags |= 1 << 1;
+        if (m_enable_scale) data_flags |= 1 << 2;
+        if (m_enable_uv_scroll) data_flags |= 1 << 3;
+        m_draw_data[0].data_flags = data_flags;
+        m_draw_data[0].num_instances = m_instance_count;
+        m_draw_data[0].scale = m_scale;
+        m_draw_data[0].uv_scale = m_uv_scale;
+        m_draw_data_buffer.SetData(m_draw_data);
+
+        m_instance_t_buffer.SetData(m_instance_data.translation);
+        if (m_enable_rotation)  { m_instance_r_buffer.SetData(m_instance_data.rotation); }
+        if (m_enable_scale)     { m_instance_s_buffer.SetData(m_instance_data.scale); }
+        if (m_enable_uv_scroll) { m_instance_uv_buffer.SetData(m_instance_data.uv_scroll); }
+    }
+
     public void Flush()
     {
-        if (m_mesh == null)
+        if (m_mesh == null || m_instance_count==0)
         {
             m_instance_count = 0;
             return;
         }
 
         m_expanded_mesh.bounds = new Bounds(m_trans.position, m_trans.localScale);
-        int num_instances = Mathf.Min(m_instance_count, m_max_instances);
-        int num_batches = (num_instances / m_instances_par_batch) + (num_instances % m_instances_par_batch != 0 ? 1 : 0);
+        m_instance_count = m_update_buffers_externally ? m_max_instances : Mathf.Min(m_instance_count, m_max_instances);
+        int num_batches = (m_max_instances / m_instances_par_batch) + (m_max_instances % m_instances_par_batch != 0 ? 1 : 0);
 
-        int data_flags = 1;
-        if (m_enable_rotation) data_flags |= 1 << 1;
-        if (m_enable_scale) data_flags |= 1 << 2;
-        if (m_enable_uv_scroll) data_flags |= 1 << 3;
-        m_draw_data[0].data_flags = data_flags;
-        m_draw_data[0].num_instances = num_instances;
-        m_draw_data[0].scale = m_scale;
-        m_draw_data[0].uv_scale = m_uv_scale;
-        m_draw_data_buffer.SetData(m_draw_data);
+        if (!m_update_buffers_externally)
+        {
+            UpdateBuffers();
+        }
 
         while (m_batch_data_buffers.Count < num_batches)
         {
@@ -193,13 +208,8 @@ public class BatchRenderer : MonoBehaviour
             m_batch_data_buffers.Add(batch_data_buffer);
         }
 
-        m_instance_t_buffer.SetData(m_instance_data.translation);
-        if (m_enable_rotation)  { m_instance_r_buffer.SetData(m_instance_data.rotation); }
-        if (m_enable_scale)     { m_instance_s_buffer.SetData(m_instance_data.scale); }
-        if (m_enable_uv_scroll) { m_instance_uv_buffer.SetData(m_instance_data.uv_scroll); }
-
         Matrix4x4 identity = Matrix4x4.identity;
-        for (int i = 0; i * m_instances_par_batch < num_instances; ++i)
+        for (int i = 0; i * m_instances_par_batch < m_instance_count; ++i)
         {
             Graphics.DrawMesh(m_expanded_mesh, identity, m_materials[i], m_layer, m_camera, 0, null, m_cast_shadow, m_receive_shadow);
         }
@@ -298,6 +308,8 @@ public class BatchRenderer : MonoBehaviour
         m_instance_r_buffer = new ComputeBuffer(m_max_instances, 16);
         m_instance_s_buffer = new ComputeBuffer(m_max_instances, 12);
         m_instance_uv_buffer = new ComputeBuffer(m_max_instances, 8);
+
+        UpdateBuffers();
     }
 
 
