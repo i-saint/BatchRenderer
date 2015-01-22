@@ -37,7 +37,6 @@ public class BatchRendererTest : MonoBehaviour
         m_renderer = GetComponent<BatchRenderer>();
 
         int num = m_renderer.GetMaxInstanceCount();
-        m_num_draw = num;
         m_instance_t = new Vector3[num];
         m_instance_r = new Quaternion[num];
         m_instance_s = new Vector3[num];

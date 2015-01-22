@@ -198,9 +198,9 @@ public class ExampleBulletManager : MonoBehaviour
                 }
             }
 
-            float e = 0.1f + Mathf.Sin(m_entities[bi].lifetime * 30.0f)*0.1f;
-            Color ec = new Color(e, e, e, 1.0f);
-            m_renderer.AddInstanceTRSCE(m_entities[bi].position, m_entities[bi].rotation, one_v3, white, ec);
+            float e = 0.5f + Mathf.Sin(m_entities[bi].lifetime * 30.0f)*0.5f;
+            Color ec = new Color(1.0f, 1.0f, 1.0f, e);
+            m_renderer.AddInstanceTRC(m_entities[bi].position, m_entities[bi].rotation, ec);
         }
         m_task_work_data[task_index].num_active_entities = num_active_entities;
 
