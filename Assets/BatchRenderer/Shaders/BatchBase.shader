@@ -34,7 +34,9 @@ struct v2f {
 
 v2f vert( appdata v )
 {
-    float k = ApplyInstanceTransform(v.vertex, v.normal, v.texcoord, v.texcoord1);
+    float4 color_dummy = 0.0;
+    float4 emission_dummy = 0.0;
+    float k = ApplyInstanceTransform(v.texcoord1, v.vertex, v.normal, v.texcoord, color_dummy, emission_dummy);
 
     v2f o;
     TRANSFER_SHADOW_CASTER(o)
@@ -82,7 +84,9 @@ struct v2f {
 
 v2f vert( appdata v )
 {
-    float k = ApplyInstanceTransform(v.vertex, v.normal, v.texcoord, v.texcoord1);
+    float4 color_dummy = 0.0;
+    float4 emission_dummy = 0.0;
+    float k = ApplyInstanceTransform(v.texcoord1, v.vertex, v.normal, v.texcoord, color_dummy, emission_dummy);
 
     v2f o;
     TRANSFER_SHADOW_COLLECTOR(o)

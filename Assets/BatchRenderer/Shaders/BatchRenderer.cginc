@@ -15,7 +15,6 @@
 
 // utilities
 
-
 float4x4 look_matrix(float3 dir, float3 up)
 {
     float3 z = dir;
@@ -55,7 +54,6 @@ float3 extract_position(float4x4 m)
 {
     return float3(m[0][3], m[1][3], m[2][3]);
 }
-
 
 
 struct Plane
@@ -105,17 +103,25 @@ struct BatchData
     int end;
 };
 
-
-
 StructuredBuffer<DrawData>      g_draw_data;
 StructuredBuffer<BatchData>     g_batch_data;
 StructuredBuffer<float3>        g_instance_t;
 StructuredBuffer<float4>        g_instance_r;
 StructuredBuffer<float3>        g_instance_s;
+StructuredBuffer<float4>        g_instance_color;
+StructuredBuffer<float4>        g_instance_emission;
 StructuredBuffer<float2>        g_instance_uv;
+
+#define DataFlag_Translation (1 << 0)
+#define DataFlag_Rotation    (1 << 1)
+#define DataFlag_Scale       (1 << 2)
+#define DataFlag_Color       (1 << 3)
+#define DataFlag_Emission    (1 << 4)
+#define DataFlag_UVScroll    (1 << 5)
 #endif
 
-float ApplyInstanceTransform(inout float4 vertex, inout float3 normal, inout float2 texcoord, float2 id)
+
+float ApplyInstanceTransform(float2 id, inout float4 vertex, inout float3 normal, inout float2 texcoord, inout float4 color, inout float4 emission)
 {
 #ifdef WITH_STRUCTURED_BUFFER
     int instance_id = g_batch_data[0].begin + id.x;
@@ -126,10 +132,10 @@ float ApplyInstanceTransform(inout float4 vertex, inout float3 normal, inout flo
     int data_flags = g_draw_data[0].data_flags;
 
     vertex.xyz *= g_draw_data[0].scale;
-    if(data_flags & (1<<2)) {
+    if(data_flags & DataFlag_Scale) {
         vertex.xyz *= g_instance_s[instance_id];
     }
-    if(data_flags & (1<<1)) {
+    if(data_flags & DataFlag_Rotation) {
         float4x4 rot = quaternion_to_matrix(g_instance_r[instance_id]);
         vertex = mul(rot, vertex);
         normal = mul(rot, normal);
@@ -137,8 +143,14 @@ float ApplyInstanceTransform(inout float4 vertex, inout float3 normal, inout flo
     vertex.xyz += g_instance_t[instance_id];
 
     texcoord *= g_draw_data[0].uv_scale;
-    if(data_flags & (1<<3)) {
+    if(data_flags & DataFlag_UVScroll) {
         texcoord += g_instance_uv[instance_id];
+    }
+    if(data_flags & DataFlag_Color) {
+        color *= g_instance_color[instance_id];
+    }
+    if(data_flags & DataFlag_Emission) {
+        emission += g_instance_emission[instance_id];
     }
     return 0.0;
 #else
@@ -147,7 +159,7 @@ float ApplyInstanceTransform(inout float4 vertex, inout float3 normal, inout flo
 }
 
 
-float ApplyBillboardTransform(inout float4 vertex, inout float3 normal, inout float2 texcoord, float2 id)
+float ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 normal, inout float2 texcoord, inout float4 color)
 {
 #ifdef WITH_STRUCTURED_BUFFER
     int instance_id = g_batch_data[0].begin + id.x;
@@ -162,11 +174,11 @@ float ApplyBillboardTransform(inout float4 vertex, inout float3 normal, inout fl
     float3 look = normalize(camera_pos-pos);
 
     vertex.xyz *= g_draw_data[0].scale;
-    if(data_flags & (1<<2)) {
+    if(data_flags & DataFlag_Scale) {
         vertex.xyz *= g_instance_s[instance_id];
     }
     vertex = mul(look_matrix(look, up), vertex);
-    if(data_flags & (1<<1)) {
+    if(data_flags & DataFlag_Rotation) {
         float4x4 rot = quaternion_to_matrix(g_instance_r[instance_id]);
         vertex = mul(rot, vertex);
         normal = mul(rot, normal);
@@ -175,8 +187,11 @@ float ApplyBillboardTransform(inout float4 vertex, inout float3 normal, inout fl
     vertex = mul(UNITY_MATRIX_VP, vertex);
 
     texcoord *= g_draw_data[0].uv_scale;
-    if(data_flags & (1<<3)) {
+    if(data_flags & DataFlag_UVScroll) {
         texcoord += g_instance_uv[instance_id];
+    }
+    if(data_flags & DataFlag_Color) {
+        color *= g_instance_color[instance_id];
     }
     return 0.0;
 #else
@@ -201,7 +216,7 @@ void ApplyViewPlaneProjection(inout float4 vertex, float3 pos)
     vertex.zw = vp.zw;
 }
 
-float ApplyViewPlaneBillboardTransform(inout float4 vertex, inout float3 normal, inout float2 texcoord, float2 id)
+float ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout float3 normal, inout float2 texcoord, inout float4 color)
 {
 #ifdef WITH_STRUCTURED_BUFFER
     int instance_id = g_batch_data[0].begin + id.x;
@@ -212,10 +227,10 @@ float ApplyViewPlaneBillboardTransform(inout float4 vertex, inout float3 normal,
     int data_flags = g_draw_data[0].data_flags;
     float3 pos = g_instance_t[instance_id];
     vertex.xyz *= g_draw_data[0].scale;
-    if(data_flags & (1<<2)) {
+    if(data_flags & DataFlag_Scale) {
         vertex.xyz *= g_instance_s[instance_id];
     }
-    if(data_flags & (1<<1)) {
+    if(data_flags & DataFlag_Rotation) {
         float4x4 rot = quaternion_to_matrix(g_instance_r[instance_id]);
         vertex = mul(rot, vertex);
         normal = mul(rot, normal);
@@ -223,8 +238,11 @@ float ApplyViewPlaneBillboardTransform(inout float4 vertex, inout float3 normal,
     ApplyViewPlaneProjection(vertex, pos);
 
     texcoord *= g_draw_data[0].uv_scale;
-    if(data_flags & (1<<3)) {
+    if(data_flags & DataFlag_UVScroll) {
         texcoord += g_instance_uv[instance_id];
+    }
+    if(data_flags & DataFlag_Color) {
+        color *= g_instance_color[instance_id];
     }
     return 0.0;
 #else

@@ -64,6 +64,31 @@ public class BatchRenderer : MonoBehaviour
         System.Array.Copy(s, start, m_instance_data.scale, reserved_index, reserved_num);
     }
 
+    public void AddInstanceTRSC(Vector3 t, Quaternion r, Vector3 s, Color c)
+    {
+        int i = Interlocked.Increment(ref m_instance_count) - 1;
+        if (i < m_max_instances)
+        {
+            m_instance_data.translation[i] = t;
+            m_instance_data.rotation[i] = r;
+            m_instance_data.scale[i] = s;
+            m_instance_data.color[i] = c;
+        }
+    }
+
+    public void AddInstanceTRSCE(Vector3 t, Quaternion r, Vector3 s, Color c, Color e)
+    {
+        int i = Interlocked.Increment(ref m_instance_count) - 1;
+        if (i < m_max_instances)
+        {
+            m_instance_data.translation[i] = t;
+            m_instance_data.rotation[i] = r;
+            m_instance_data.scale[i] = s;
+            m_instance_data.color[i] = c;
+            m_instance_data.emission[i] = e;
+        }
+    }
+
     public InstanceData ReserveInstance(int num, out int reserved_index, out int reserved_num)
     {
         reserved_index = Interlocked.Add(ref m_instance_count, num) - num;
@@ -99,6 +124,8 @@ public class BatchRenderer : MonoBehaviour
         public Vector3[] translation;
         public Quaternion[] rotation;
         public Vector3[] scale;
+        public Color[] color;
+        public Color[] emission;
         public Vector2[] uv_scroll;
 
         public void Resize(int size)
@@ -106,8 +133,14 @@ public class BatchRenderer : MonoBehaviour
             translation = new Vector3[size];
             rotation = new Quaternion[size];
             scale = new Vector3[size];
-            for (int i = 0; i < scale.Length; ++i) { scale[i] = Vector3.one; }
+            color = new Color[size];
+            emission = new Color[size];
             uv_scroll = new Vector2[size];
+
+            Vector3 one = Vector3.one;
+            Color white = Color.white;
+            for (int i = 0; i < scale.Length; ++i) { scale[i] = one; }
+            for (int i = 0; i < color.Length; ++i) { color[i] = white; }
         }
     }
 
@@ -115,6 +148,8 @@ public class BatchRenderer : MonoBehaviour
 
     public bool m_enable_rotation;
     public bool m_enable_scale;
+    public bool m_enable_color;
+    public bool m_enable_emission;
     public bool m_enable_uv_scroll;
 
     [SerializeField] int m_max_instances = 1024 * 16;
@@ -137,6 +172,8 @@ public class BatchRenderer : MonoBehaviour
     ComputeBuffer m_instance_t_buffer;
     ComputeBuffer m_instance_r_buffer;
     ComputeBuffer m_instance_s_buffer;
+    ComputeBuffer m_instance_color_buffer;
+    ComputeBuffer m_instance_emission_buffer;
     ComputeBuffer m_instance_uv_buffer;
     DrawData[] m_draw_data = new DrawData[1];
     List<ComputeBuffer> m_batch_data_buffers;
@@ -149,27 +186,11 @@ public class BatchRenderer : MonoBehaviour
     public ComputeBuffer GetInstanceRBuffer() { return m_instance_r_buffer; }
     public ComputeBuffer GetInstanceSBuffer() { return m_instance_s_buffer; }
     public ComputeBuffer GetInstanceUVBuffer() { return m_instance_uv_buffer; }
+    public ComputeBuffer GetInstanceColorBuffer() { return m_instance_color_buffer; }
+    public ComputeBuffer GetInstanceEmissionBuffer() { return m_instance_emission_buffer; }
     public int GetMaxInstanceCount() { return m_max_instances; }
     public int GetInstanceCount() { return m_instance_count; }
     public void SetInstanceCount(int v) { m_instance_count = v; }
-
-    public void UpdateBuffers()
-    {
-        int data_flags = 1;
-        if (m_enable_rotation) data_flags |= 1 << 1;
-        if (m_enable_scale) data_flags |= 1 << 2;
-        if (m_enable_uv_scroll) data_flags |= 1 << 3;
-        m_draw_data[0].data_flags = data_flags;
-        m_draw_data[0].num_instances = m_instance_count;
-        m_draw_data[0].scale = m_scale;
-        m_draw_data[0].uv_scale = m_uv_scale;
-        m_draw_data_buffer.SetData(m_draw_data);
-
-        m_instance_t_buffer.SetData(m_instance_data.translation);
-        if (m_enable_rotation)  { m_instance_r_buffer.SetData(m_instance_data.rotation); }
-        if (m_enable_scale)     { m_instance_s_buffer.SetData(m_instance_data.scale); }
-        if (m_enable_uv_scroll) { m_instance_uv_buffer.SetData(m_instance_data.uv_scroll); }
-    }
 
     public void Flush()
     {
@@ -203,6 +224,8 @@ public class BatchRenderer : MonoBehaviour
             m.SetBuffer("g_instance_t", m_instance_t_buffer);
             m.SetBuffer("g_instance_r", m_instance_r_buffer);
             m.SetBuffer("g_instance_s", m_instance_s_buffer);
+            m.SetBuffer("g_instance_color", m_instance_color_buffer);
+            m.SetBuffer("g_instance_emission", m_instance_emission_buffer);
             m.SetBuffer("g_instance_uv", m_instance_uv_buffer);
             m_materials.Add(m);
             m_batch_data_buffers.Add(batch_data_buffer);
@@ -286,13 +309,25 @@ public class BatchRenderer : MonoBehaviour
         return ret;
     }
 
+    public enum DataFlags
+    {
+        Translation = 1 << 0,
+        Rotation    = 1 << 1,
+        Scale       = 1 << 2,
+        Color       = 1 << 3,
+        Emission    = 1 << 4,
+        UVScroll    = 1 << 5,
+    }
+
     void ReleaseBuffers()
     {
-        if (m_draw_data_buffer != null) { m_draw_data_buffer.Release(); m_draw_data_buffer = null; }
-        if (m_instance_t_buffer != null) { m_instance_t_buffer.Release(); m_instance_t_buffer = null; }
-        if (m_instance_r_buffer != null) { m_instance_r_buffer.Release(); m_instance_r_buffer = null; }
-        if (m_instance_s_buffer != null) { m_instance_s_buffer.Release(); m_instance_s_buffer = null; }
-        if (m_instance_uv_buffer != null) { m_instance_uv_buffer.Release(); m_instance_uv_buffer = null; }
+        if (m_draw_data_buffer != null)         { m_draw_data_buffer.Release(); m_draw_data_buffer = null; }
+        if (m_instance_t_buffer != null)        { m_instance_t_buffer.Release(); m_instance_t_buffer = null; }
+        if (m_instance_r_buffer != null)        { m_instance_r_buffer.Release(); m_instance_r_buffer = null; }
+        if (m_instance_s_buffer != null)        { m_instance_s_buffer.Release(); m_instance_s_buffer = null; }
+        if (m_instance_color_buffer != null)    { m_instance_color_buffer.Release(); m_instance_color_buffer = null; }
+        if (m_instance_emission_buffer != null) { m_instance_emission_buffer.Release(); m_instance_emission_buffer = null; }
+        if (m_instance_uv_buffer != null)       { m_instance_uv_buffer.Release(); m_instance_uv_buffer = null; }
         m_batch_data_buffers.ForEach((e) => { e.Release(); });
         m_batch_data_buffers.Clear();
         m_materials.Clear();
@@ -303,13 +338,52 @@ public class BatchRenderer : MonoBehaviour
         ReleaseBuffers();
 
         m_instance_data.Resize(m_max_instances);
-        m_draw_data_buffer = new ComputeBuffer(1, DrawData.size);
-        m_instance_t_buffer = new ComputeBuffer(m_max_instances, 12);
-        m_instance_r_buffer = new ComputeBuffer(m_max_instances, 16);
-        m_instance_s_buffer = new ComputeBuffer(m_max_instances, 12);
-        m_instance_uv_buffer = new ComputeBuffer(m_max_instances, 8);
+        m_draw_data_buffer          = new ComputeBuffer(1, DrawData.size);
+        m_instance_t_buffer         = new ComputeBuffer(m_max_instances, 12);
+        m_instance_r_buffer         = new ComputeBuffer(m_max_instances, 16);
+        m_instance_s_buffer         = new ComputeBuffer(m_max_instances, 12);
+        m_instance_color_buffer     = new ComputeBuffer(m_max_instances, 16);
+        m_instance_emission_buffer  = new ComputeBuffer(m_max_instances, 16);
+        m_instance_uv_buffer        = new ComputeBuffer(m_max_instances, 8);
 
         UpdateBuffers();
+    }
+
+    public void UpdateBuffers()
+    {
+        int data_flags = (int)DataFlags.Translation;
+        m_instance_t_buffer.SetData(m_instance_data.translation);
+        if (m_enable_rotation)
+        {
+            data_flags |= (int)DataFlags.Rotation;
+            m_instance_r_buffer.SetData(m_instance_data.rotation);
+        }
+        if (m_enable_scale)
+        {
+            data_flags |= (int)DataFlags.Scale;
+            m_instance_s_buffer.SetData(m_instance_data.scale);
+        }
+        if (m_enable_color)
+        {
+            data_flags |= (int)DataFlags.Color;
+            m_instance_color_buffer.SetData(m_instance_data.color);
+        }
+        if (m_enable_emission)
+        {
+            data_flags |= (int)DataFlags.Emission;
+            m_instance_emission_buffer.SetData(m_instance_data.emission);
+        }
+        if (m_enable_uv_scroll)
+        {
+            data_flags |= (int)DataFlags.UVScroll;
+            m_instance_uv_buffer.SetData(m_instance_data.uv_scroll);
+        }
+
+        m_draw_data[0].data_flags = data_flags;
+        m_draw_data[0].num_instances = m_instance_count;
+        m_draw_data[0].scale = m_scale;
+        m_draw_data[0].uv_scale = m_uv_scale;
+        m_draw_data_buffer.SetData(m_draw_data);
     }
 
 

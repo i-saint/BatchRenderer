@@ -177,7 +177,8 @@ public class ExampleBulletManager : MonoBehaviour
         int num = end - begin;
         float dt = m_work_data.delta_time;
         int num_active_entities = 0;
-        Vector3 scale = Vector3.one;
+        Vector3 one_v3 = Vector3.one;
+        Color white = Color.white;
         for (int bi = begin; bi < end; ++bi)
         {
             if (m_entities[bi].lifetime <= 0.0f) { continue; }
@@ -197,9 +198,9 @@ public class ExampleBulletManager : MonoBehaviour
                 }
             }
 
-            //m_renderer.AddInstanceT(m_entities[bi].position);
-            m_renderer.AddInstanceTR(m_entities[bi].position, m_entities[bi].rotation);
-            //m_renderer.AddInstanceTRS(m_entities[bi].position, m_entities[bi].rotation, scale);
+            float e = 0.1f + Mathf.Sin(m_entities[bi].lifetime * 30.0f)*0.1f;
+            Color ec = new Color(e, e, e, 1.0f);
+            m_renderer.AddInstanceTRSCE(m_entities[bi].position, m_entities[bi].rotation, one_v3, white, ec);
         }
         m_task_work_data[task_index].num_active_entities = num_active_entities;
 
