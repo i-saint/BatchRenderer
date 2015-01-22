@@ -174,11 +174,8 @@ public class ExampleBulletManager : MonoBehaviour
         int task_index = (int)c;
         int begin = task_index * m_entities_par_task;
         int end = Mathf.Min((task_index + 1) * m_entities_par_task, m_max_entities);
-        int num = end - begin;
         float dt = m_work_data.delta_time;
         int num_active_entities = 0;
-        Vector3 one_v3 = Vector3.one;
-        Color white = Color.white;
         for (int bi = begin; bi < end; ++bi)
         {
             if (m_entities[bi].lifetime <= 0.0f) { continue; }

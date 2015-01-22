@@ -261,6 +261,11 @@ public class BatchRenderer : MonoBehaviour
             m.SetBuffer("g_instance_color", m_instance_color_buffer);
             m.SetBuffer("g_instance_emission", m_instance_emission_buffer);
             m.SetBuffer("g_instance_uv", m_instance_uv_buffer);
+            // fix rendering order for transparent objects
+            if (m.renderQueue >= 3000)
+            {
+                m.renderQueue = m.renderQueue + (i + 1);
+            }
             m_materials.Add(m);
             m_batch_data_buffers.Add(batch_data_buffer);
         }
