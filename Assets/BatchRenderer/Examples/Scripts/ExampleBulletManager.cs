@@ -8,6 +8,13 @@ using System.Threading;
 public class ExampleBulletManager : MonoBehaviour
 {
     [System.Serializable]
+    public struct Range
+    {
+        public int begin;
+        public int end;
+    }
+
+    [System.Serializable]
     public struct BulletEntity
     {
         public Vector3 position;
@@ -51,11 +58,12 @@ public class ExampleBulletManager : MonoBehaviour
     WorkData m_work_data;
     TaskWorkData[] m_task_work_data;
 
-    const int entities_par_task = 256;
+    const int m_entities_par_task = 1024;
 
     public BulletEntity Shoot(Vector3 pos, Vector3 vel, float lifetime = 10.0f)
     {
-        var e = new BulletEntity {
+        var e = new BulletEntity
+        {
             position = pos,
             velosity = vel,
             rotation = Quaternion.LookRotation(vel),
@@ -66,6 +74,22 @@ public class ExampleBulletManager : MonoBehaviour
         return e;
     }
 
+    public void Shoot(Vector3[] pos, Vector3[] vel, float lifetime = 10.0f)
+    {
+        for (int i = 0; i < pos.Length; ++i )
+        {
+            var e = new BulletEntity
+            {
+                position = pos[i],
+                velosity = vel[i],
+                rotation = Quaternion.LookRotation(vel[i]),
+                lifetime = lifetime,
+            };
+            m_entities_to_add[m_add_index++] = e;
+            m_add_index %= m_entities_to_add.Length;
+        }
+    }
+
 
     void Awake()
     {
@@ -74,7 +98,7 @@ public class ExampleBulletManager : MonoBehaviour
         m_entities = new BulletEntity[m_max_entities];
         m_entities_to_add = new BulletEntity[m_max_entities];
 
-        m_num_tasks = m_max_entities / entities_par_task;
+        m_num_tasks = m_max_entities / m_entities_par_task + (m_max_entities % m_entities_par_task != 0 ? 1 : 0);
         m_work_data = new WorkData();
         m_work_data.targets = new HitTarget[128];
         m_task_work_data = new TaskWorkData[m_num_tasks];
@@ -112,14 +136,14 @@ public class ExampleBulletManager : MonoBehaviour
         {
             for (int i = 0; i < m_num_tasks; ++i)
             {
-                ThreadPool.QueueUserWorkItem(Task, i);
+                ThreadPool.QueueUserWorkItem(UpdateTask, i);
             }
         }
         else
         {
             for (int i = 0; i < m_num_tasks; ++i)
             {
-                Task(i);
+                UpdateTask(i);
             }
         }
     }
@@ -145,15 +169,17 @@ public class ExampleBulletManager : MonoBehaviour
         m_renderer.Flush();
     }
 
-    void Task(System.Object c)
+    void UpdateTask(System.Object c)
     {
-        int ti = (int)c;
+        int task_index = (int)c;
+        int begin = task_index * m_entities_par_task;
+        int end = Mathf.Min((task_index + 1) * m_entities_par_task, m_max_entities);
+        int num = end - begin;
         float dt = m_work_data.delta_time;
         int num_active_entities = 0;
         Vector3 scale = Vector3.one;
-        for (int i = 0; i < entities_par_task; ++i )
+        for (int bi = begin; bi < end; ++bi)
         {
-            int bi = ti*entities_par_task + i;
             if (m_entities[bi].lifetime <= 0.0f) { continue; }
 
             ++num_active_entities;
@@ -175,7 +201,7 @@ public class ExampleBulletManager : MonoBehaviour
             m_renderer.AddInstanceTR(m_entities[bi].position, m_entities[bi].rotation);
             //m_renderer.AddInstanceTRS(m_entities[bi].position, m_entities[bi].rotation, scale);
         }
-        m_task_work_data[ti].num_active_entities = num_active_entities;
+        m_task_work_data[task_index].num_active_entities = num_active_entities;
 
         Interlocked.Decrement(ref m_num_active_tasks);
     }

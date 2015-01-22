@@ -27,6 +27,11 @@ public class ExampleEntity : MonoBehaviour
         m_delta_damage += dd;
     }
 
+    public float R(float v=1.0f)
+    {
+        return Random.Range(-v, v);
+    }
+
 
     public virtual void OnEnable()
     {
