@@ -89,6 +89,40 @@ public class BatchRenderer : MonoBehaviour
         }
     }
 
+    public void AddInstanceTRC(Vector3 t, Quaternion r, Color c)
+    {
+        int i = Interlocked.Increment(ref m_instance_count) - 1;
+        if (i < m_max_instances)
+        {
+            m_instance_data.translation[i] = t;
+            m_instance_data.rotation[i] = r;
+            m_instance_data.color[i] = c;
+        }
+    }
+
+    public void AddInstanceTRU(Vector3 t, Quaternion r, Vector2 uv)
+    {
+        int i = Interlocked.Increment(ref m_instance_count) - 1;
+        if (i < m_max_instances)
+        {
+            m_instance_data.translation[i] = t;
+            m_instance_data.rotation[i] = r;
+            m_instance_data.uv_scroll[i] = uv;
+        }
+    }
+
+    public void AddInstanceTRSU(Vector3 t, Quaternion r, Vector3 s, Vector2 uv)
+    {
+        int i = Interlocked.Increment(ref m_instance_count) - 1;
+        if (i < m_max_instances)
+        {
+            m_instance_data.translation[i] = t;
+            m_instance_data.rotation[i] = r;
+            m_instance_data.scale[i] = s;
+            m_instance_data.uv_scroll[i] = uv;
+        }
+    }
+
     public InstanceData ReserveInstance(int num, out int reserved_index, out int reserved_num)
     {
         reserved_index = Interlocked.Add(ref m_instance_count, num) - num;

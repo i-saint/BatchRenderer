@@ -126,6 +126,7 @@ float ApplyInstanceTransform(float2 id, inout float4 vertex, inout float3 normal
 #ifdef WITH_STRUCTURED_BUFFER
     int instance_id = g_batch_data[0].begin + id.x;
     if(instance_id >= g_draw_data[0].num_instances) {
+        vertex.xyz *= 0.0;
         return 1.0;
     }
 
@@ -164,6 +165,7 @@ float ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 norma
 #ifdef WITH_STRUCTURED_BUFFER
     int instance_id = g_batch_data[0].begin + id.x;
     if(instance_id >= g_draw_data[0].num_instances) {
+        vertex.xyz *= 0.0;
         return 1.0;
     }
 
@@ -200,20 +202,17 @@ float ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 norma
 }
 
 
-float g_view_plane_distance;
-
 void ApplyViewPlaneProjection(inout float4 vertex, float3 pos)
 {
     float aspect = _ScreenParams.x / _ScreenParams.y;
     float3 camera_pos = _WorldSpaceCameraPos.xyz;
     float3 look = normalize(camera_pos-pos);
-    Plane view_plane = {look, g_view_plane_distance};
+    Plane view_plane = {look, 1.0};
     pos = camera_pos + project_to_plane(view_plane, pos-camera_pos);
     float4 vp = mul(UNITY_MATRIX_VP, float4(pos, 1.0));
-    vertex.x /= aspect;
-    vertex.y *= -1.0;
-    vertex.xy += vp.xy;
-    vertex.zw = vp.zw;
+    vertex.y *= -aspect;
+    vertex.xy += vp.xy / vp.w;
+    vertex.zw = float2(0.0, 1.0);
 }
 
 float ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout float3 normal, inout float2 texcoord, inout float4 color)
@@ -221,6 +220,7 @@ float ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout flo
 #ifdef WITH_STRUCTURED_BUFFER
     int instance_id = g_batch_data[0].begin + id.x;
     if(instance_id >= g_draw_data[0].num_instances) {
+        vertex.xyz *= 0.0;
         return 1.0;
     }
 

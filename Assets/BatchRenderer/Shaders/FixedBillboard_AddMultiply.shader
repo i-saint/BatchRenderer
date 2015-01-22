@@ -1,7 +1,6 @@
 ﻿Shader "BatchRenderer/FixedBillboard Add Multiply" {
 Properties {
     _MainTex ("Texture", 2D) = "white" {}
-    g_view_plane_distance ("View Plane Distance", Float) = 10.0
 }
 
 Category {

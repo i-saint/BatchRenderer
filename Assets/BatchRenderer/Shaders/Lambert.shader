@@ -8,7 +8,6 @@ SubShader {
     Tags { "RenderType"="BatchedOpaque" }
     LOD 200
 
-
 CGPROGRAM
 #pragma target 5.0
 #pragma surface surf Lambert vertex:vert
