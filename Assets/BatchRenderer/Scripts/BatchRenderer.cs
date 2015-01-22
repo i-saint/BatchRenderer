@@ -189,7 +189,7 @@ public class BatchRenderer : MonoBehaviour
     [SerializeField] int m_max_instances = 1024 * 16;
     [SerializeField] Mesh m_mesh;
     [SerializeField] Material m_material;
-    public LayerMask m_layer = 1;
+    public LayerMask m_layer_selector = 1;
     public bool m_cast_shadow = false;
     public bool m_receive_shadow = false;
     public Vector3 m_scale = Vector3.one;
@@ -200,6 +200,7 @@ public class BatchRenderer : MonoBehaviour
 
     int m_instances_par_batch;
     int m_instance_count;
+    int m_layer;
     Transform m_trans;
     Mesh m_expanded_mesh;
     ComputeBuffer m_draw_data_buffer;
@@ -438,6 +439,17 @@ public class BatchRenderer : MonoBehaviour
         m_instances_par_batch = max_vertices / m_mesh.vertexCount;
         m_expanded_mesh = CreateExpandedMesh(m_mesh);
         m_expanded_mesh.UploadMeshData(true);
+
+        int layer_mask = m_layer_selector.value;
+        for (int i = 0; i < 32; ++i )
+        {
+            if ((layer_mask & (1<<i)) != 0)
+            {
+                m_layer = i;
+                m_layer_selector.value = 1 << i;
+                break;
+            }
+        }
 
         ResetBuffers();
     }
