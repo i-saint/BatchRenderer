@@ -94,7 +94,6 @@ struct DrawData
     int num_max_instances;
     int num_instances;
     float3 scale;
-    float2 uv_scale;
 };
 
 struct BatchData
@@ -110,14 +109,14 @@ StructuredBuffer<float4>        g_instance_r;
 StructuredBuffer<float3>        g_instance_s;
 StructuredBuffer<float4>        g_instance_color;
 StructuredBuffer<float4>        g_instance_emission;
-StructuredBuffer<float2>        g_instance_uv;
+StructuredBuffer<float4>        g_instance_uv;
 
 #define DataFlag_Translation (1 << 0)
 #define DataFlag_Rotation    (1 << 1)
 #define DataFlag_Scale       (1 << 2)
 #define DataFlag_Color       (1 << 3)
 #define DataFlag_Emission    (1 << 4)
-#define DataFlag_UVScroll    (1 << 5)
+#define DataFlag_UVOffset    (1 << 5)
 #endif
 
 
@@ -143,9 +142,9 @@ float ApplyInstanceTransform(float2 id, inout float4 vertex, inout float3 normal
     }
     vertex.xyz += g_instance_t[instance_id];
 
-    texcoord *= g_draw_data[0].uv_scale;
-    if(data_flags & DataFlag_UVScroll) {
-        texcoord += g_instance_uv[instance_id];
+    if(data_flags & DataFlag_UVOffset) {
+        float4 u = g_instance_uv[instance_id];
+        texcoord = texcoord*u.xy + u.zw;
     }
     if(data_flags & DataFlag_Color) {
         color *= g_instance_color[instance_id];
@@ -188,9 +187,9 @@ float ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 norma
     vertex.xyz += pos;
     vertex = mul(UNITY_MATRIX_VP, vertex);
 
-    texcoord *= g_draw_data[0].uv_scale;
-    if(data_flags & DataFlag_UVScroll) {
-        texcoord += g_instance_uv[instance_id];
+    if(data_flags & DataFlag_UVOffset) {
+        float4 u = g_instance_uv[instance_id];
+        texcoord = texcoord*u.xy + u.zw;
     }
     if(data_flags & DataFlag_Color) {
         color *= g_instance_color[instance_id];
@@ -237,9 +236,9 @@ float ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout flo
     }
     ApplyViewPlaneProjection(vertex, pos);
 
-    texcoord *= g_draw_data[0].uv_scale;
-    if(data_flags & DataFlag_UVScroll) {
-        texcoord += g_instance_uv[instance_id];
+    if(data_flags & DataFlag_UVOffset) {
+        float4 u = g_instance_uv[instance_id];
+        texcoord = texcoord*u.xy + u.zw;
     }
     if(data_flags & DataFlag_Color) {
         color *= g_instance_color[instance_id];

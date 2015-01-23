@@ -174,7 +174,9 @@ public class ExampleBulletManager : MonoBehaviour
         int task_index = (int)c;
         int begin = task_index * m_entities_par_task;
         int end = Mathf.Min((task_index + 1) * m_entities_par_task, m_max_entities);
+
         float dt = m_work_data.delta_time;
+    
         int num_active_entities = 0;
         for (int bi = begin; bi < end; ++bi)
         {
@@ -195,9 +197,7 @@ public class ExampleBulletManager : MonoBehaviour
                 }
             }
 
-            float e = 0.5f + Mathf.Sin(m_entities[bi].lifetime * 30.0f)*0.5f;
-            Color ec = new Color(1.0f, 1.0f, 1.0f, e);
-            m_renderer.AddInstanceTRC(m_entities[bi].position, m_entities[bi].rotation, ec);
+            m_renderer.AddInstanceTR(m_entities[bi].position, m_entities[bi].rotation);
         }
         m_task_work_data[task_index].num_active_entities = num_active_entities;
 

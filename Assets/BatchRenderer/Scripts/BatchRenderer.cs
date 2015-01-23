@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Threading;
 
+
 public class BatchRenderer : MonoBehaviour
 {
 
@@ -100,18 +101,30 @@ public class BatchRenderer : MonoBehaviour
         }
     }
 
-    public void AddInstanceTRU(Vector3 t, Quaternion r, Vector2 uv)
+    public void AddInstanceTRU(Vector3 t, Quaternion r, Vector4 uv)
     {
         int i = Interlocked.Increment(ref m_instance_count) - 1;
         if (i < m_max_instances)
         {
             m_instance_data.translation[i] = t;
             m_instance_data.rotation[i] = r;
-            m_instance_data.uv_scroll[i] = uv;
+            m_instance_data.uv_offset[i] = uv;
         }
     }
 
-    public void AddInstanceTRSU(Vector3 t, Quaternion r, Vector3 s, Vector2 uv)
+    public void AddInstanceTRCU(Vector3 t, Quaternion r, Color c, Vector4 uv)
+    {
+        int i = Interlocked.Increment(ref m_instance_count) - 1;
+        if (i < m_max_instances)
+        {
+            m_instance_data.translation[i] = t;
+            m_instance_data.rotation[i] = r;
+            m_instance_data.color[i] = c;
+            m_instance_data.uv_offset[i] = uv;
+        }
+    }
+
+    public void AddInstanceTRSCU(Vector3 t, Quaternion r, Vector3 s, Color c, Vector4 uv)
     {
         int i = Interlocked.Increment(ref m_instance_count) - 1;
         if (i < m_max_instances)
@@ -119,9 +132,11 @@ public class BatchRenderer : MonoBehaviour
             m_instance_data.translation[i] = t;
             m_instance_data.rotation[i] = r;
             m_instance_data.scale[i] = s;
-            m_instance_data.uv_scroll[i] = uv;
+            m_instance_data.color[i] = c;
+            m_instance_data.uv_offset[i] = uv;
         }
     }
+
 
     public InstanceData ReserveInstance(int num, out int reserved_index, out int reserved_num)
     {
@@ -134,13 +149,12 @@ public class BatchRenderer : MonoBehaviour
     [System.Serializable]
     public struct DrawData
     {
-        public const int size = 32;
+        public const int size = 24;
 
         public int data_flags;
         public int num_max_instances;
         public int num_instances;
         public Vector3 scale;
-        public Vector2 uv_scale;
     }
 
     [System.Serializable]
@@ -160,7 +174,7 @@ public class BatchRenderer : MonoBehaviour
         public Vector3[] scale;
         public Color[] color;
         public Color[] emission;
-        public Vector2[] uv_scroll;
+        public Vector4[] uv_offset;
 
         public void Resize(int size)
         {
@@ -169,12 +183,14 @@ public class BatchRenderer : MonoBehaviour
             scale = new Vector3[size];
             color = new Color[size];
             emission = new Color[size];
-            uv_scroll = new Vector2[size];
+            uv_offset = new Vector4[size];
 
-            Vector3 one = Vector3.one;
-            Color white = Color.white;
-            for (int i = 0; i < scale.Length; ++i) { scale[i] = one; }
-            for (int i = 0; i < color.Length; ++i) { color[i] = white; }
+            Vector3 default_scale = Vector3.one;
+            Color default_color = Color.white;
+            Vector4 default_uvoffset = new Vector4(1.0f, 1.0f, 0.0f, 0.0f);
+            for (int i = 0; i < scale.Length; ++i) { scale[i] = default_scale; }
+            for (int i = 0; i < color.Length; ++i) { color[i] = default_color; }
+            for (int i = 0; i < uv_offset.Length; ++i) { uv_offset[i] = default_uvoffset; }
         }
     }
 
@@ -184,16 +200,15 @@ public class BatchRenderer : MonoBehaviour
     public bool m_enable_scale;
     public bool m_enable_color;
     public bool m_enable_emission;
-    public bool m_enable_uv_scroll;
+    public bool m_enable_uv_offset;
 
-    [SerializeField] int m_max_instances = 1024 * 16;
-    [SerializeField] Mesh m_mesh;
-    [SerializeField] Material m_material;
+    public int m_max_instances = 1024 * 16;
+    public Mesh m_mesh;
+    public Material m_material;
     public LayerMask m_layer_selector = 1;
     public bool m_cast_shadow = false;
     public bool m_receive_shadow = false;
     public Vector3 m_scale = Vector3.one;
-    public Vector2 m_uv_scale = Vector2.one;
     public Camera m_camera;
     public bool m_flush_on_LateUpdate = true;
     public bool m_update_buffers_externally = false;
@@ -356,7 +371,7 @@ public class BatchRenderer : MonoBehaviour
         Scale       = 1 << 2,
         Color       = 1 << 3,
         Emission    = 1 << 4,
-        UVScroll    = 1 << 5,
+        UVOffset    = 1 << 5,
     }
 
     void ReleaseBuffers()
@@ -384,7 +399,7 @@ public class BatchRenderer : MonoBehaviour
         m_instance_s_buffer         = new ComputeBuffer(m_max_instances, 12);
         m_instance_color_buffer     = new ComputeBuffer(m_max_instances, 16);
         m_instance_emission_buffer  = new ComputeBuffer(m_max_instances, 16);
-        m_instance_uv_buffer        = new ComputeBuffer(m_max_instances, 8);
+        m_instance_uv_buffer        = new ComputeBuffer(m_max_instances, 16);
 
         UpdateBuffers();
     }
@@ -413,16 +428,15 @@ public class BatchRenderer : MonoBehaviour
             data_flags |= (int)DataFlags.Emission;
             m_instance_emission_buffer.SetData(m_instance_data.emission);
         }
-        if (m_enable_uv_scroll)
+        if (m_enable_uv_offset)
         {
-            data_flags |= (int)DataFlags.UVScroll;
-            m_instance_uv_buffer.SetData(m_instance_data.uv_scroll);
+            data_flags |= (int)DataFlags.UVOffset;
+            m_instance_uv_buffer.SetData(m_instance_data.uv_offset);
         }
 
         m_draw_data[0].data_flags = data_flags;
         m_draw_data[0].num_instances = m_instance_count;
         m_draw_data[0].scale = m_scale;
-        m_draw_data[0].uv_scale = m_uv_scale;
         m_draw_data_buffer.SetData(m_draw_data);
     }
 
