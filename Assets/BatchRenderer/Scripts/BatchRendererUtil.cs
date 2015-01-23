@@ -6,7 +6,7 @@ using System.Threading;
 
 public static class BatchRendererUtil
 {
-    public static Vector4 ComputeUVOsset(Texture texture, Rect rect)
+    public static Vector4 ComputeUVOffset(Texture texture, Rect rect)
     {
         float tw = texture.width;
         float th = texture.height;
@@ -17,7 +17,7 @@ public static class BatchRendererUtil
             (1.0f - rect.yMax) / th);
     }
 
-    public static Vector4 ComputeUVOsset(int texture_width, int texture_height, Rect rect)
+    public static Vector4 ComputeUVOffset(int texture_width, int texture_height, Rect rect)
     {
         float tw = texture_width;
         float th = texture_height;

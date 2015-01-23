@@ -93,7 +93,7 @@ public class TextureAnimationTest : MonoBehaviour
             float e = 0.75f + Mathf.Sin(time * 10.0f) * 0.25f;
             int a = (int)(time * 5.0f) % 16;
             m_instance_color[i] = new Color(1.0f, 1.0f, 1.0f, e);
-            m_instance_uv[i] = BatchRendererUtil.ComputeUVOsset(tex, new Rect(32 * (a % 4), 32 * (a / 4), 32, 32));
+            m_instance_uv[i] = BatchRendererUtil.ComputeUVOffset(tex, new Rect(32 * (a % 4), 32 * (a / 4), 32, 32));
         }
         {
             int reserved_index;
