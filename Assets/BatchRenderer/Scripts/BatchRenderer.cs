@@ -298,19 +298,19 @@ public class BatchRenderer : MonoBehaviour
     public bool m_flush_on_LateUpdate = true;
     public bool m_update_buffers_externally = false;
 
-    int m_instances_par_batch;
-    int m_instance_count;
-    int m_layer;
-    Transform m_trans;
-    Mesh m_expanded_mesh;
-    ComputeBuffer m_draw_data_buffer;
-    DrawData[] m_draw_data = new DrawData[1];
-    List<ComputeBuffer> m_batch_data_buffers;
-    List<Material> m_materials;
+    protected int m_instances_par_batch;
+    protected int m_instance_count;
+    protected int m_layer;
+    protected Transform m_trans;
+    protected Mesh m_expanded_mesh;
+    protected ComputeBuffer m_draw_data_buffer;
+    protected DrawData[] m_draw_data = new DrawData[1];
+    protected List<ComputeBuffer> m_batch_data_buffers;
+    protected List<Material> m_materials;
 
-    InstanceData m_instance_data;
-    InstanceBuffer m_instance_buffer;
-    InstanceTexture m_instance_texture;
+    protected InstanceData m_instance_data;
+    protected InstanceBuffer m_instance_buffer;
+    protected InstanceTexture m_instance_texture;
 
 
     public InstanceBuffer GetInstanceBuffer() { return m_instance_buffer; }
@@ -319,7 +319,20 @@ public class BatchRenderer : MonoBehaviour
     public int GetInstanceCount() { return m_instance_count; }
     public void SetInstanceCount(int v) { m_instance_count = v; }
 
-    public void Flush()
+    public virtual Material CloneMaterial()
+    {
+        Material m = new Material(m_material);
+        m.SetBuffer("g_draw_data", m_draw_data_buffer);
+        m.SetBuffer("g_instance_buffer_t", m_instance_buffer.translation);
+        m.SetBuffer("g_instance_buffer_r", m_instance_buffer.rotation);
+        m.SetBuffer("g_instance_buffer_s", m_instance_buffer.scale);
+        m.SetBuffer("g_instance_buffer_color", m_instance_buffer.color);
+        m.SetBuffer("g_instance_buffer_emission", m_instance_buffer.emission);
+        m.SetBuffer("g_instance_buffer_uv", m_instance_buffer.uv_offset);
+        return m;
+    }
+
+    public virtual void Flush()
     {
         if (m_mesh == null || m_instance_count==0)
         {
@@ -345,20 +358,14 @@ public class BatchRenderer : MonoBehaviour
             batch_data[0].end = (i + 1) * m_instances_par_batch;
             batch_data_buffer.SetData(batch_data);
 
-            Material m = new Material(m_material);
-            m.SetBuffer("g_draw_data", m_draw_data_buffer);
+            Material m = CloneMaterial();
             m.SetBuffer("g_batch_data", batch_data_buffer);
-            m.SetBuffer("g_instance_buffer_t", m_instance_buffer.translation);
-            m.SetBuffer("g_instance_buffer_r", m_instance_buffer.rotation);
-            m.SetBuffer("g_instance_buffer_s", m_instance_buffer.scale);
-            m.SetBuffer("g_instance_buffer_color", m_instance_buffer.color);
-            m.SetBuffer("g_instance_buffer_emission", m_instance_buffer.emission);
-            m.SetBuffer("g_instance_buffer_uv", m_instance_buffer.uv_offset);
             // fix rendering order for transparent objects
             if (m.renderQueue >= 3000)
             {
                 m.renderQueue = m.renderQueue + (i + 1);
             }
+
             m_materials.Add(m);
             m_batch_data_buffers.Add(batch_data_buffer);
         }
@@ -441,7 +448,7 @@ public class BatchRenderer : MonoBehaviour
         return ret;
     }
 
-    void ReleaseBuffers()
+    public virtual void ReleaseBuffers()
     {
         if (m_draw_data_buffer != null) { m_draw_data_buffer.Release(); m_draw_data_buffer = null; }
         m_instance_buffer.Release();
@@ -450,7 +457,7 @@ public class BatchRenderer : MonoBehaviour
         m_materials.Clear();
     }
 
-    void ResetBuffers()
+    public virtual void ResetBuffers()
     {
         ReleaseBuffers();
 
@@ -462,7 +469,7 @@ public class BatchRenderer : MonoBehaviour
         UpdateBuffers();
     }
 
-    public void UpdateBuffers()
+    public virtual void UpdateBuffers()
     {
         int data_flags = (int)DataFlags.Translation;
         m_instance_buffer.translation.SetData(m_instance_data.translation);
@@ -499,7 +506,7 @@ public class BatchRenderer : MonoBehaviour
     }
 
 
-    void OnEnable()
+    public virtual void OnEnable()
     {
         if (m_mesh == null) return;
 
@@ -528,12 +535,12 @@ public class BatchRenderer : MonoBehaviour
         ResetBuffers();
     }
 
-    void OnDisable()
+    public virtual void OnDisable()
     {
         ReleaseBuffers();
     }
 
-    void LateUpdate()
+    public virtual void LateUpdate()
     {
         if (m_flush_on_LateUpdate)
         {
@@ -541,7 +548,7 @@ public class BatchRenderer : MonoBehaviour
         }
     }
 
-    void OnDrawGizmos()
+    public virtual void OnDrawGizmos()
     {
         Gizmos.color = Color.yellow;
         Gizmos.DrawWireCube(transform.position, transform.localScale);

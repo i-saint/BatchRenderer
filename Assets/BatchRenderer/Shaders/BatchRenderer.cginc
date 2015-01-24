@@ -146,13 +146,13 @@ StructuredBuffer<float4>        g_instance_buffer_color;
 StructuredBuffer<float4>        g_instance_buffer_emission;
 StructuredBuffer<float4>        g_instance_buffer_uv;
 
-
 int     GetDataFlags()          { return g_draw_data[0].data_flags; }
 int     GetNumMaxInstances()    { return g_draw_data[0].num_max_instances; }
 int     GetNumInstances()       { return g_draw_data[0].num_instances; }
 float3  GetBaseScale()          { return g_draw_data[0].scale; }
 int     GetBatchBegin()         { return g_batch_data[0].begin; }
 int     GetBatchEnd()           { return g_batch_data[0].end; }
+int     GetInstanceID(float2 i) { return i.x + GetBatchBegin(); }
 float3  GetInstanceTranslation(int i)   { return g_instance_buffer_t[i]; }
 float4  GetInstanceRotation(int i)      { return g_instance_buffer_r[i]; }
 float3  GetInstanceScale(int i)         { return g_instance_buffer_s[i]; }
