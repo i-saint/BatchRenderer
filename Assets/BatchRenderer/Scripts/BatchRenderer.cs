@@ -146,6 +146,16 @@ public class BatchRenderer : MonoBehaviour
     }
 
 
+    public enum DataFlags
+    {
+        Translation = 1 << 0,
+        Rotation = 1 << 1,
+        Scale = 1 << 2,
+        Color = 1 << 3,
+        Emission = 1 << 4,
+        UVOffset = 1 << 5,
+    }
+
     [System.Serializable]
     public struct DrawData
     {
@@ -194,6 +204,81 @@ public class BatchRenderer : MonoBehaviour
         }
     }
 
+    public class InstanceBuffer
+    {
+        public ComputeBuffer translation;
+        public ComputeBuffer rotation;
+        public ComputeBuffer scale;
+        public ComputeBuffer color;
+        public ComputeBuffer emission;
+        public ComputeBuffer uv_offset;
+
+        public void Release()
+        {
+            if (translation != null){ translation.Release(); translation = null; }
+            if (rotation != null)   { rotation.Release(); rotation = null; }
+            if (scale != null)      { scale.Release(); scale = null; }
+            if (color != null)      { color.Release(); color = null; }
+            if (emission != null)   { emission.Release(); emission = null; }
+            if (uv_offset != null)  { uv_offset.Release(); uv_offset = null; }
+        }
+
+        public void Allocate(int num_max_instances)
+        {
+            Release();
+            translation = new ComputeBuffer(num_max_instances, 12);
+            rotation = new ComputeBuffer(num_max_instances, 16);
+            scale = new ComputeBuffer(num_max_instances, 12);
+            color = new ComputeBuffer(num_max_instances, 16);
+            emission = new ComputeBuffer(num_max_instances, 16);
+            uv_offset = new ComputeBuffer(num_max_instances, 16);
+        }
+    }
+
+    // I will need this when I make OpenGL implementation
+    public class InstanceTexture
+    {
+        const int texture_width = 1024;
+
+        public RenderTexture translation;
+        public RenderTexture rotation;
+        public RenderTexture scale;
+        public RenderTexture color;
+        public RenderTexture emission;
+        public RenderTexture uv_offset;
+
+        public void Release()
+        {
+            if (translation != null) { translation.Release(); translation = null; }
+            if (rotation != null) { rotation.Release(); rotation = null; }
+            if (scale != null) { scale.Release(); scale = null; }
+            if (color != null) { color.Release(); color = null; }
+            if (emission != null) { emission.Release(); emission = null; }
+            if (uv_offset != null) { uv_offset.Release(); uv_offset = null; }
+        }
+
+        RenderTexture CreateDataTexture(int num_max_instances)
+        {
+            int width = texture_width;
+            int height = num_max_instances / texture_width + (num_max_instances % texture_width != 0 ? 1 : 0);
+            var r = new RenderTexture(width, height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Default);
+            r.filterMode = FilterMode.Point;
+            r.Create();
+            return r;
+        }
+
+        public void Allocate(int num_max_instances)
+        {
+            Release();
+            translation = CreateDataTexture(num_max_instances);
+            rotation = CreateDataTexture(num_max_instances);
+            scale = CreateDataTexture(num_max_instances);
+            color = CreateDataTexture(num_max_instances);
+            emission = CreateDataTexture(num_max_instances);
+            uv_offset = CreateDataTexture(num_max_instances);
+        }
+    }
+
 
 
     public bool m_enable_rotation;
@@ -219,25 +304,17 @@ public class BatchRenderer : MonoBehaviour
     Transform m_trans;
     Mesh m_expanded_mesh;
     ComputeBuffer m_draw_data_buffer;
-    ComputeBuffer m_instance_t_buffer;
-    ComputeBuffer m_instance_r_buffer;
-    ComputeBuffer m_instance_s_buffer;
-    ComputeBuffer m_instance_color_buffer;
-    ComputeBuffer m_instance_emission_buffer;
-    ComputeBuffer m_instance_uv_buffer;
     DrawData[] m_draw_data = new DrawData[1];
     List<ComputeBuffer> m_batch_data_buffers;
     List<Material> m_materials;
 
     InstanceData m_instance_data;
+    InstanceBuffer m_instance_buffer;
+    InstanceTexture m_instance_texture;
 
 
-    public ComputeBuffer GetInstanceTBuffer() { return m_instance_t_buffer; }
-    public ComputeBuffer GetInstanceRBuffer() { return m_instance_r_buffer; }
-    public ComputeBuffer GetInstanceSBuffer() { return m_instance_s_buffer; }
-    public ComputeBuffer GetInstanceUVBuffer() { return m_instance_uv_buffer; }
-    public ComputeBuffer GetInstanceColorBuffer() { return m_instance_color_buffer; }
-    public ComputeBuffer GetInstanceEmissionBuffer() { return m_instance_emission_buffer; }
+    public InstanceBuffer GetInstanceBuffer() { return m_instance_buffer; }
+    public InstanceTexture GetInstanceTexture() { return m_instance_texture; }
     public int GetMaxInstanceCount() { return m_max_instances; }
     public int GetInstanceCount() { return m_instance_count; }
     public void SetInstanceCount(int v) { m_instance_count = v; }
@@ -271,12 +348,12 @@ public class BatchRenderer : MonoBehaviour
             Material m = new Material(m_material);
             m.SetBuffer("g_draw_data", m_draw_data_buffer);
             m.SetBuffer("g_batch_data", batch_data_buffer);
-            m.SetBuffer("g_instance_t", m_instance_t_buffer);
-            m.SetBuffer("g_instance_r", m_instance_r_buffer);
-            m.SetBuffer("g_instance_s", m_instance_s_buffer);
-            m.SetBuffer("g_instance_color", m_instance_color_buffer);
-            m.SetBuffer("g_instance_emission", m_instance_emission_buffer);
-            m.SetBuffer("g_instance_uv", m_instance_uv_buffer);
+            m.SetBuffer("g_instance_buffer_t", m_instance_buffer.translation);
+            m.SetBuffer("g_instance_buffer_r", m_instance_buffer.rotation);
+            m.SetBuffer("g_instance_buffer_s", m_instance_buffer.scale);
+            m.SetBuffer("g_instance_buffer_color", m_instance_buffer.color);
+            m.SetBuffer("g_instance_buffer_emission", m_instance_buffer.emission);
+            m.SetBuffer("g_instance_buffer_uv", m_instance_buffer.uv_offset);
             // fix rendering order for transparent objects
             if (m.renderQueue >= 3000)
             {
@@ -364,25 +441,10 @@ public class BatchRenderer : MonoBehaviour
         return ret;
     }
 
-    public enum DataFlags
-    {
-        Translation = 1 << 0,
-        Rotation    = 1 << 1,
-        Scale       = 1 << 2,
-        Color       = 1 << 3,
-        Emission    = 1 << 4,
-        UVOffset    = 1 << 5,
-    }
-
     void ReleaseBuffers()
     {
-        if (m_draw_data_buffer != null)         { m_draw_data_buffer.Release(); m_draw_data_buffer = null; }
-        if (m_instance_t_buffer != null)        { m_instance_t_buffer.Release(); m_instance_t_buffer = null; }
-        if (m_instance_r_buffer != null)        { m_instance_r_buffer.Release(); m_instance_r_buffer = null; }
-        if (m_instance_s_buffer != null)        { m_instance_s_buffer.Release(); m_instance_s_buffer = null; }
-        if (m_instance_color_buffer != null)    { m_instance_color_buffer.Release(); m_instance_color_buffer = null; }
-        if (m_instance_emission_buffer != null) { m_instance_emission_buffer.Release(); m_instance_emission_buffer = null; }
-        if (m_instance_uv_buffer != null)       { m_instance_uv_buffer.Release(); m_instance_uv_buffer = null; }
+        if (m_draw_data_buffer != null) { m_draw_data_buffer.Release(); m_draw_data_buffer = null; }
+        m_instance_buffer.Release();
         m_batch_data_buffers.ForEach((e) => { e.Release(); });
         m_batch_data_buffers.Clear();
         m_materials.Clear();
@@ -393,13 +455,8 @@ public class BatchRenderer : MonoBehaviour
         ReleaseBuffers();
 
         m_instance_data.Resize(m_max_instances);
-        m_draw_data_buffer          = new ComputeBuffer(1, DrawData.size);
-        m_instance_t_buffer         = new ComputeBuffer(m_max_instances, 12);
-        m_instance_r_buffer         = new ComputeBuffer(m_max_instances, 16);
-        m_instance_s_buffer         = new ComputeBuffer(m_max_instances, 12);
-        m_instance_color_buffer     = new ComputeBuffer(m_max_instances, 16);
-        m_instance_emission_buffer  = new ComputeBuffer(m_max_instances, 16);
-        m_instance_uv_buffer        = new ComputeBuffer(m_max_instances, 16);
+        m_draw_data_buffer = new ComputeBuffer(1, DrawData.size);
+        m_instance_buffer.Allocate(m_max_instances);
 
         // set default values
         UpdateBuffers();
@@ -408,31 +465,31 @@ public class BatchRenderer : MonoBehaviour
     public void UpdateBuffers()
     {
         int data_flags = (int)DataFlags.Translation;
-        m_instance_t_buffer.SetData(m_instance_data.translation);
+        m_instance_buffer.translation.SetData(m_instance_data.translation);
         if (m_enable_rotation)
         {
             data_flags |= (int)DataFlags.Rotation;
-            m_instance_r_buffer.SetData(m_instance_data.rotation);
+            m_instance_buffer.rotation.SetData(m_instance_data.rotation);
         }
         if (m_enable_scale)
         {
             data_flags |= (int)DataFlags.Scale;
-            m_instance_s_buffer.SetData(m_instance_data.scale);
+            m_instance_buffer.scale.SetData(m_instance_data.scale);
         }
         if (m_enable_color)
         {
             data_flags |= (int)DataFlags.Color;
-            m_instance_color_buffer.SetData(m_instance_data.color);
+            m_instance_buffer.color.SetData(m_instance_data.color);
         }
         if (m_enable_emission)
         {
             data_flags |= (int)DataFlags.Emission;
-            m_instance_emission_buffer.SetData(m_instance_data.emission);
+            m_instance_buffer.emission.SetData(m_instance_data.emission);
         }
         if (m_enable_uv_offset)
         {
             data_flags |= (int)DataFlags.UVOffset;
-            m_instance_uv_buffer.SetData(m_instance_data.uv_offset);
+            m_instance_buffer.uv_offset.SetData(m_instance_data.uv_offset);
         }
 
         m_draw_data[0].data_flags = data_flags;
@@ -450,6 +507,8 @@ public class BatchRenderer : MonoBehaviour
         m_batch_data_buffers = new List<ComputeBuffer>();
         m_materials = new List<Material>();
         m_instance_data = new InstanceData();
+        m_instance_buffer = new InstanceBuffer();
+        m_instance_texture = null;
 
         m_instances_par_batch = max_vertices / m_mesh.vertexCount;
         m_expanded_mesh = CreateExpandedMesh(m_mesh);

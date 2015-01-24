@@ -19,6 +19,7 @@ CGPROGRAM
 #pragma multi_compile_shadowcaster
 #include "UnityCG.cginc"
 #include "BatchRenderer.cginc"
+#include "Surface.cginc"
 
 struct appdata {
     float4 vertex : POSITION;
@@ -66,6 +67,7 @@ CGPROGRAM
 #define SHADOW_COLLECTOR_PASS
 #include "UnityCG.cginc"
 #include "BatchRenderer.cginc"
+#include "Surface.cginc"
 
 struct appdata {
     float4 vertex : POSITION;

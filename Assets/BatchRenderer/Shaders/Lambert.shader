@@ -13,6 +13,7 @@ CGPROGRAM
 #pragma surface surf Lambert vertex:vert
 #include "UnityCG.cginc"
 #include "BatchRenderer.cginc"
+#include "Surface.cginc"
 
 struct Input {
     float2 uv_MainTex;

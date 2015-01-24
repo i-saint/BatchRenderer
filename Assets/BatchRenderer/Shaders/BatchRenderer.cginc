@@ -87,6 +87,13 @@ float3 project_to_plane(Plane plane, float3 pos)
 
 
 
+#define DataFlag_Translation (1 << 0)
+#define DataFlag_Rotation    (1 << 1)
+#define DataFlag_Scale       (1 << 2)
+#define DataFlag_Color       (1 << 3)
+#define DataFlag_Emission    (1 << 4)
+#define DataFlag_UVOffset    (1 << 5)
+
 #ifdef WITH_STRUCTURED_BUFFER
 struct DrawData
 {
@@ -104,152 +111,49 @@ struct BatchData
 
 StructuredBuffer<DrawData>      g_draw_data;
 StructuredBuffer<BatchData>     g_batch_data;
-StructuredBuffer<float3>        g_instance_t;
-StructuredBuffer<float4>        g_instance_r;
-StructuredBuffer<float3>        g_instance_s;
-StructuredBuffer<float4>        g_instance_color;
-StructuredBuffer<float4>        g_instance_emission;
-StructuredBuffer<float4>        g_instance_uv;
-
-#define DataFlag_Translation (1 << 0)
-#define DataFlag_Rotation    (1 << 1)
-#define DataFlag_Scale       (1 << 2)
-#define DataFlag_Color       (1 << 3)
-#define DataFlag_Emission    (1 << 4)
-#define DataFlag_UVOffset    (1 << 5)
-#endif
+StructuredBuffer<float3>        g_instance_buffer_t;
+StructuredBuffer<float4>        g_instance_buffer_r;
+StructuredBuffer<float3>        g_instance_buffer_s;
+StructuredBuffer<float4>        g_instance_buffer_color;
+StructuredBuffer<float4>        g_instance_buffer_emission;
+StructuredBuffer<float4>        g_instance_buffer_uv;
 
 
-void ApplyInstanceTransform(float2 id, inout float4 vertex, inout float3 normal, inout float2 texcoord, inout float4 color, inout float4 emission)
-{
-#ifdef WITH_STRUCTURED_BUFFER
-    int instance_id = g_batch_data[0].begin + id.x;
-    if(instance_id >= g_draw_data[0].num_instances) {
-        vertex.xyz *= 0.0;
-        return;
-    }
+int     GetDataFlags()          { return g_draw_data[0].data_flags; }
+int     GetNumMaxInstances()    { return g_draw_data[0].num_max_instances; }
+int     GetNumInstances()       { return g_draw_data[0].num_instances; }
+float3  GetBaseScale()          { return g_draw_data[0].scale; }
+int     GetBatchBegin()         { return g_batch_data[0].begin; }
+int     GetBatchEnd()           { return g_batch_data[0].end; }
+float3  GetInstanceTranslation(int i)   { return g_instance_buffer_t[i]; }
+float4  GetInstanceRotation(int i)      { return g_instance_buffer_r[i]; }
+float3  GetInstanceScale(int i)         { return g_instance_buffer_s[i]; }
+float4  GetInstanceColor(int i)         { return g_instance_buffer_color[i]; }
+float4  GetInstanceEmission(int i)      { return g_instance_buffer_emission[i]; }
+float4  GetInstanceUVOffset(int i)      { return g_instance_buffer_uv[i]; }
 
-    int data_flags = g_draw_data[0].data_flags;
+#else // WITH_STRUCTURED_BUFFER
 
-    vertex.xyz *= g_draw_data[0].scale;
-    if(data_flags & DataFlag_Scale) {
-        vertex.xyz *= g_instance_s[instance_id];
-    }
-    if(data_flags & DataFlag_Rotation) {
-        float4x4 rot = quaternion_to_matrix(g_instance_r[instance_id]);
-        vertex = mul(rot, vertex);
-        normal = mul(rot, float4(normal, 0.0)).xyz;
-    }
-    vertex.xyz += g_instance_t[instance_id];
+sampler2D g_instance_texture_t;
+sampler2D g_instance_texture_r;
+sampler2D g_instance_texture_s;
+sampler2D g_instance_texture_color;
+sampler2D g_instance_texture_emission;
+sampler2D g_instance_texture_uv;
 
-    if(data_flags & DataFlag_UVOffset) {
-        float4 u = g_instance_uv[instance_id];
-        texcoord = texcoord*u.xy + u.zw;
-    }
-    if(data_flags & DataFlag_Color) {
-        color *= g_instance_color[instance_id];
-    }
-    if(data_flags & DataFlag_Emission) {
-        emission += g_instance_emission[instance_id];
-    }
-#else
-    vertex.xyz *= 0.0;
-#endif
-}
+/* todo
+int     GetDataFlags()          {  }
+int     GetNumMaxInstances()    {  }
+int     GetNumInstances()       {  }
+float3  GetBaseScale()          {  }
+int     GetBatchBegin()         {  }
+int     GetBatchEnd()           {  }
+float3  GetInstanceTranslation(int i)   {  }
+float4  GetInstanceRotation(int i)      {  }
+float3  GetInstanceScale(int i)         {  }
+float4  GetInstanceColor(int i)         {  }
+float4  GetInstanceEmission(int i)      {  }
+float4  GetInstanceUVOffset(int i)      {  }
+*/
 
-
-void ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 normal, inout float2 texcoord, inout float4 color)
-{
-#ifdef WITH_STRUCTURED_BUFFER
-    int instance_id = g_batch_data[0].begin + id.x;
-    if(instance_id >= g_draw_data[0].num_instances) {
-        vertex.xyz *= 0.0;
-        return;
-    }
-
-    int data_flags = g_draw_data[0].data_flags;
-    float3 up = float3(0.0, 1.0, 0.0);
-    float3 camera_pos = _WorldSpaceCameraPos.xyz;
-    float3 pos = g_instance_t[instance_id];
-    float3 look = normalize(camera_pos-pos);
-
-    vertex.xyz *= g_draw_data[0].scale;
-    if(data_flags & DataFlag_Scale) {
-        vertex.xyz *= g_instance_s[instance_id];
-    }
-    vertex = mul(look_matrix(look, up), vertex);
-    if(data_flags & DataFlag_Rotation) {
-        float4x4 rot = quaternion_to_matrix(g_instance_r[instance_id]);
-        vertex = mul(rot, vertex);
-        normal = mul(rot, float4(normal, 0.0)).xyz;
-    }
-    vertex.xyz += pos;
-    vertex = mul(UNITY_MATRIX_VP, vertex);
-
-    if(data_flags & DataFlag_UVOffset) {
-        float4 u = g_instance_uv[instance_id];
-        texcoord = texcoord*u.xy + u.zw;
-    }
-    if(data_flags & DataFlag_Color) {
-        color *= g_instance_color[instance_id];
-    }
-#else
-    vertex.xyz *= 0.0;
-#endif
-}
-
-
-bool ApplyViewPlaneProjection(inout float4 vertex, float3 pos)
-{
-    float4 vp = mul(UNITY_MATRIX_VP, float4(pos, 1.0));
-    if(vp.z<0.0) {
-        vertex.xyz *= 0.0;
-        return false;
-    }
-
-    float aspect = _ScreenParams.x / _ScreenParams.y;
-    float3 camera_pos = _WorldSpaceCameraPos.xyz;
-    float3 look = normalize(camera_pos-pos);
-    Plane view_plane = {look, 1.0};
-    pos = camera_pos + project_to_plane(view_plane, pos-camera_pos);
-    vertex.y *= -aspect;
-    vertex.xy += vp.xy / vp.w;
-    vertex.zw = float2(0.0, 1.0);
-    return true;
-}
-
-void ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout float3 normal, inout float2 texcoord, inout float4 color)
-{
-#ifdef WITH_STRUCTURED_BUFFER
-    int instance_id = g_batch_data[0].begin + id.x;
-    if(instance_id >= g_draw_data[0].num_instances) {
-        vertex.xyz *= 0.0;
-        return;
-    }
-
-    int data_flags = g_draw_data[0].data_flags;
-    float3 pos = g_instance_t[instance_id];
-    vertex.xyz *= g_draw_data[0].scale;
-    if(data_flags & DataFlag_Scale) {
-        vertex.xyz *= g_instance_s[instance_id];
-    }
-    if(data_flags & DataFlag_Rotation) {
-        float4x4 rot = quaternion_to_matrix(g_instance_r[instance_id]);
-        vertex = mul(rot, vertex);
-        normal = mul(rot, float4(normal, 0.0)).xyz;
-    }
-    if(!ApplyViewPlaneProjection(vertex, pos)) {
-        return;
-    }
-
-    if(data_flags & DataFlag_UVOffset) {
-        float4 u = g_instance_uv[instance_id];
-        texcoord = texcoord*u.xy + u.zw;
-    }
-    if(data_flags & DataFlag_Color) {
-        color *= g_instance_color[instance_id];
-    }
-#else
-    vertex.xyz *= 0.0;
-#endif
-}
+#endif // WITH_STRUCTURED_BUFFER
