@@ -76,24 +76,21 @@ struct appdata {
 
 struct v2f { 
     V2F_SHADOW_COLLECTOR;
-    float kill : TEXCOORD5;
 };
 
 v2f vert( appdata v )
 {
     float4 color_dummy = 0.0;
     float4 emission_dummy = 0.0;
-    float k = ApplyInstanceTransform(v.texcoord1, v.vertex, v.normal, v.texcoord, color_dummy, emission_dummy);
+    ApplyInstanceTransform(v.texcoord1, v.vertex, v.normal, v.texcoord, color_dummy, emission_dummy);
 
     v2f o;
     TRANSFER_SHADOW_COLLECTOR(o)
-    o.kill = k;
     return o;
 }
 
 fixed4 frag (v2f i) : SV_Target
 {
-    if(i.kill!=0.0f) { discard; }
     SHADOW_COLLECTOR_FRAGMENT(i)
 }
 ENDCG

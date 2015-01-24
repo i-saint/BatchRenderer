@@ -138,7 +138,7 @@ void ApplyInstanceTransform(float2 id, inout float4 vertex, inout float3 normal,
     if(data_flags & DataFlag_Rotation) {
         float4x4 rot = quaternion_to_matrix(g_instance_r[instance_id]);
         vertex = mul(rot, vertex);
-        normal = mul(rot, float4(normal, 0.0));
+        normal = mul(rot, float4(normal, 0.0)).xyz;
     }
     vertex.xyz += g_instance_t[instance_id];
 
@@ -181,7 +181,7 @@ void ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 normal
     if(data_flags & DataFlag_Rotation) {
         float4x4 rot = quaternion_to_matrix(g_instance_r[instance_id]);
         vertex = mul(rot, vertex);
-        normal = mul(rot, float4(normal, 0.0));
+        normal = mul(rot, float4(normal, 0.0)).xyz;
     }
     vertex.xyz += pos;
     vertex = mul(UNITY_MATRIX_VP, vertex);
@@ -236,7 +236,7 @@ void ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout floa
     if(data_flags & DataFlag_Rotation) {
         float4x4 rot = quaternion_to_matrix(g_instance_r[instance_id]);
         vertex = mul(rot, vertex);
-        normal = mul(rot, float4(normal, 0.0));
+        normal = mul(rot, float4(normal, 0.0)).xyz;
     }
     if(!ApplyViewPlaneProjection(vertex, pos)) {
         return;
