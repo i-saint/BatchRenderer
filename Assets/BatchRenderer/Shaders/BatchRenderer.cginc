@@ -120,13 +120,13 @@ StructuredBuffer<float4>        g_instance_uv;
 #endif
 
 
-float ApplyInstanceTransform(float2 id, inout float4 vertex, inout float3 normal, inout float2 texcoord, inout float4 color, inout float4 emission)
+void ApplyInstanceTransform(float2 id, inout float4 vertex, inout float3 normal, inout float2 texcoord, inout float4 color, inout float4 emission)
 {
 #ifdef WITH_STRUCTURED_BUFFER
     int instance_id = g_batch_data[0].begin + id.x;
     if(instance_id >= g_draw_data[0].num_instances) {
         vertex.xyz *= 0.0;
-        return 1.0;
+        return;
     }
 
     int data_flags = g_draw_data[0].data_flags;
@@ -152,20 +152,19 @@ float ApplyInstanceTransform(float2 id, inout float4 vertex, inout float3 normal
     if(data_flags & DataFlag_Emission) {
         emission += g_instance_emission[instance_id];
     }
-    return 0.0;
 #else
-    return 1.0;
+    vertex.xyz *= 0.0;
 #endif
 }
 
 
-float ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 normal, inout float2 texcoord, inout float4 color)
+void ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 normal, inout float2 texcoord, inout float4 color)
 {
 #ifdef WITH_STRUCTURED_BUFFER
     int instance_id = g_batch_data[0].begin + id.x;
     if(instance_id >= g_draw_data[0].num_instances) {
         vertex.xyz *= 0.0;
-        return 1.0;
+        return;
     }
 
     int data_flags = g_draw_data[0].data_flags;
@@ -194,33 +193,38 @@ float ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 norma
     if(data_flags & DataFlag_Color) {
         color *= g_instance_color[instance_id];
     }
-    return 0.0;
 #else
-    return 1.0;
+    vertex.xyz *= 0.0;
 #endif
 }
 
 
-void ApplyViewPlaneProjection(inout float4 vertex, float3 pos)
+bool ApplyViewPlaneProjection(inout float4 vertex, float3 pos)
 {
+    float4 vp = mul(UNITY_MATRIX_VP, float4(pos, 1.0));
+    if(vp.z<0.0) {
+        vertex.xyz *= 0.0;
+        return false;
+    }
+
     float aspect = _ScreenParams.x / _ScreenParams.y;
     float3 camera_pos = _WorldSpaceCameraPos.xyz;
     float3 look = normalize(camera_pos-pos);
     Plane view_plane = {look, 1.0};
     pos = camera_pos + project_to_plane(view_plane, pos-camera_pos);
-    float4 vp = mul(UNITY_MATRIX_VP, float4(pos, 1.0));
     vertex.y *= -aspect;
     vertex.xy += vp.xy / vp.w;
     vertex.zw = float2(0.0, 1.0);
+    return true;
 }
 
-float ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout float3 normal, inout float2 texcoord, inout float4 color)
+void ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout float3 normal, inout float2 texcoord, inout float4 color)
 {
 #ifdef WITH_STRUCTURED_BUFFER
     int instance_id = g_batch_data[0].begin + id.x;
     if(instance_id >= g_draw_data[0].num_instances) {
         vertex.xyz *= 0.0;
-        return 1.0;
+        return;
     }
 
     int data_flags = g_draw_data[0].data_flags;
@@ -234,7 +238,9 @@ float ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout flo
         vertex = mul(rot, vertex);
         normal = mul(rot, float4(normal, 0.0));
     }
-    ApplyViewPlaneProjection(vertex, pos);
+    if(!ApplyViewPlaneProjection(vertex, pos)) {
+        return;
+    }
 
     if(data_flags & DataFlag_UVOffset) {
         float4 u = g_instance_uv[instance_id];
@@ -243,8 +249,7 @@ float ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout flo
     if(data_flags & DataFlag_Color) {
         color *= g_instance_color[instance_id];
     }
-    return 0.0;
 #else
-    return 1.0;
+    vertex.xyz *= 0.0;
 #endif
 }

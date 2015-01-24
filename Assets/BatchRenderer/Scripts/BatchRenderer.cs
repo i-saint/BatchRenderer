@@ -401,6 +401,7 @@ public class BatchRenderer : MonoBehaviour
         m_instance_emission_buffer  = new ComputeBuffer(m_max_instances, 16);
         m_instance_uv_buffer        = new ComputeBuffer(m_max_instances, 16);
 
+        // set default values
         UpdateBuffers();
     }
 
