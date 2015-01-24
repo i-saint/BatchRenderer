@@ -10,20 +10,21 @@ void ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 normal
     }
 
     int data_flags = GetDataFlags();
-    float3 up = float3(0.0, 1.0, 0.0);
     float3 camera_pos = _WorldSpaceCameraPos.xyz;
     float3 pos = GetInstanceTranslation(instance_id);
     float3 look = normalize(camera_pos-pos);
+    float3 axis = cross(look, float3(0.0, 1.0, 0.0));
+    float3 up = mul(axis_rotation_matrix33(axis, 90.0), look);
 
     vertex.xyz *= GetBaseScale();
     if(data_flags & DataFlag_Scale) {
         vertex.xyz *= GetInstanceScale(instance_id);
     }
-    vertex = mul(look_matrix(look, up), vertex);
+    vertex.xyz = mul(look_matrix33(look, up), vertex.xyz);
     if(data_flags & DataFlag_Rotation) {
-        float4x4 rot = quaternion_to_matrix(GetInstanceRotation(instance_id));
-        vertex = mul(rot, vertex);
-        normal = mul(rot, float4(normal, 0.0)).xyz;
+        float3x3 rot = quaternion_to_matrix33(GetInstanceRotation(instance_id));
+        vertex.xyz = mul(rot, vertex.xyz);
+        normal = mul(rot, normal);
     }
     vertex.xyz += pos;
     vertex = mul(UNITY_MATRIX_VP, vertex);
@@ -76,9 +77,9 @@ void ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout floa
         vertex.xyz *= GetInstanceScale(instance_id);
     }
     if(data_flags & DataFlag_Rotation) {
-        float4x4 rot = quaternion_to_matrix(GetInstanceRotation(instance_id));
-        vertex = mul(rot, vertex);
-        normal = mul(rot, float4(normal, 0.0)).xyz;
+        float3x3 rot = quaternion_to_matrix33(GetInstanceRotation(instance_id));
+        vertex.xyz = mul(rot, vertex.xyz);
+        normal = mul(rot, normal);
     }
     if(!ApplyViewPlaneProjection(vertex, pos)) {
         return;

@@ -149,11 +149,11 @@ public class BatchRenderer : MonoBehaviour
     public enum DataFlags
     {
         Translation = 1 << 0,
-        Rotation = 1 << 1,
-        Scale = 1 << 2,
-        Color = 1 << 3,
-        Emission = 1 << 4,
-        UVOffset = 1 << 5,
+        Rotation    = 1 << 1,
+        Scale       = 1 << 2,
+        Color       = 1 << 3,
+        Emission    = 1 << 4,
+        UVOffset    = 1 << 5,
     }
 
     [System.Serializable]

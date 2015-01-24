@@ -16,9 +16,9 @@ void ApplyInstanceTransform(float2 id, inout float4 vertex, inout float3 normal,
         vertex.xyz *= GetInstanceScale(instance_id);
     }
     if(data_flags & DataFlag_Rotation) {
-        float4x4 rot = quaternion_to_matrix(GetInstanceRotation(instance_id));
-        vertex = mul(rot, vertex);
-        normal = mul(rot, float4(normal, 0.0)).xyz;
+        float3x3 rot = quaternion_to_matrix33(GetInstanceRotation(instance_id));
+        vertex.xyz = mul(rot, vertex.xyz);
+        normal = mul(rot, normal);
     }
     vertex.xyz += GetInstanceTranslation(instance_id);
 
