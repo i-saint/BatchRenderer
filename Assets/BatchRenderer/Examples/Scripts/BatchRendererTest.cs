@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
-
+using System.Windows.Forms;
 
 public class BatchRendererTest : MonoBehaviour
 {
@@ -187,4 +187,14 @@ public class BatchRendererTest : MonoBehaviour
         System.Array.Copy(m_instance_r, r.begin, data.rotation, reserved_index, reserved_num);
         System.Array.Copy(m_instance_s, r.begin, data.scale, reserved_index, reserved_num);
     }
+
+    void OnGUI()
+    {
+        if (GUI.Button(new Rect(5.0f, 5.0f, 85.0f, 25.0f), "Window"))
+        {
+            var form = new Assets.BatchRenderer.Examples.Scripts.TestForm();
+            form.Show();
+        }
+    }
 }
+
