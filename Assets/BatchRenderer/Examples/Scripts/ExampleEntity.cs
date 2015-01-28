@@ -18,6 +18,7 @@ public class ExampleEntity : MonoBehaviour
     public float m_delta_damage = 0;
 
     protected Transform m_trans;
+    protected Rigidbody m_rigid;
     protected ExampleBulletCollider m_bcol;
 
 
@@ -37,6 +38,7 @@ public class ExampleEntity : MonoBehaviour
     {
         GetInstances().Add(this);
         m_trans = GetComponent<Transform>();
+        m_rigid = GetComponent<Rigidbody>();
         m_bcol = GetComponent<ExampleBulletCollider>();
     }
 
@@ -47,6 +49,18 @@ public class ExampleEntity : MonoBehaviour
 
     public virtual void Update()
     {
+        {
+            Vector3 pos = m_trans.position;
+            pos.z = 0.0f;
+            m_trans.position = pos;
+        }
+        if (m_rigid != null && !m_rigid.isKinematic)
+        {
+            Vector3 vel = m_rigid.velocity;
+            vel.z = 0.0f;
+            m_rigid.velocity = vel;
+        }
+
         if (m_life > 0.0f)
         {
             if (m_bcol != null)

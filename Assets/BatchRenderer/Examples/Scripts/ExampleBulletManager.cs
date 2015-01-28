@@ -77,7 +77,7 @@ public class ExampleBulletManager : MonoBehaviour
         return e;
     }
 
-    public void Shoot(Vector3[] pos, Vector3[] vel, float lifetime = 10.0f)
+    public void Shoot(Vector3[] pos, Vector3[] vel, float lifetime = 10.0f, int owner_id = 0)
     {
         for (int i = 0; i < pos.Length; ++i )
         {

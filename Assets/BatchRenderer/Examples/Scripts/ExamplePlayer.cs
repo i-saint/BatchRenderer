@@ -6,13 +6,6 @@ public class ExamplePlayer : ExampleEntity
 {
     public float m_move_speed = 5.0f;
 
-    Rigidbody m_rigid;
-
-    void Awake()
-    {
-        m_rigid = GetComponent<Rigidbody>();
-    }
-
     public override void Update()
     {
         base.Update();
@@ -31,6 +24,18 @@ public class ExamplePlayer : ExampleEntity
             if (plane.Raycast(ray, out distance))
             {
                 m_rigid.rotation = Quaternion.LookRotation(ray.GetPoint(distance) - m_trans.position);
+            }
+            m_rigid.angularVelocity = Vector3.zero;
+        }
+        if (Input.GetButton("Fire1"))
+        {
+            ExampleBulletManager bm = ExampleGame.GetBulletManager();
+            Vector3 center = m_trans.position;
+            Vector3 direction = m_trans.forward;
+            for (int i = 0; i < 32; ++i )
+            {
+                Vector3 pos = center + new Vector3(R(), R(), 0.0f).normalized * R() * 0.75f;
+                bm.Shoot(pos, direction*20.0f, 5.0f, m_bcol.m_id);
             }
         }
     }
