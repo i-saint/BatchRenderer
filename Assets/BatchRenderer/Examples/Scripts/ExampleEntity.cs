@@ -15,10 +15,10 @@ public class ExampleEntity : MonoBehaviour
     }
 
     public float m_life = 100.0f;
-    public float m_hit_radius = 0.5f;
     public float m_delta_damage = 0;
 
     protected Transform m_trans;
+    protected ExampleBulletCollider m_bcol;
 
 
     public Transform GetTransform() { return m_trans; }
@@ -37,6 +37,7 @@ public class ExampleEntity : MonoBehaviour
     {
         GetInstances().Add(this);
         m_trans = GetComponent<Transform>();
+        m_bcol = GetComponent<ExampleBulletCollider>();
     }
 
     public virtual void OnDisable()
@@ -48,6 +49,12 @@ public class ExampleEntity : MonoBehaviour
     {
         if (m_life > 0.0f)
         {
+            if (m_bcol != null)
+            {
+                m_delta_damage += (float)m_bcol.m_num_hits;
+                m_bcol.m_num_hits = 0;
+            }
+
             m_life -= m_delta_damage;
             m_delta_damage = 0;
             if (m_life <= 0.0f)

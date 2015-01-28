@@ -21,14 +21,16 @@ public class ExampleBulletManager : MonoBehaviour
         public Vector3 velosity;
         public Quaternion rotation;
         public float lifetime;
+        public int owner_id;
     }
 
     struct HitTarget
     {
         public Vector3 position;
         public float radius;
+        public int id;
         public int num_hits;
-        public ExampleEntity entity;
+        public ExampleBulletCollider collider;
     }
 
     struct WorkData
@@ -60,7 +62,7 @@ public class ExampleBulletManager : MonoBehaviour
 
     const int m_entities_par_task = 1024;
 
-    public BulletEntity Shoot(Vector3 pos, Vector3 vel, float lifetime = 10.0f)
+    public BulletEntity Shoot(Vector3 pos, Vector3 vel, float lifetime = 10.0f, int owner_id=0)
     {
         var e = new BulletEntity
         {
@@ -68,6 +70,7 @@ public class ExampleBulletManager : MonoBehaviour
             velosity = vel,
             rotation = Quaternion.LookRotation(vel),
             lifetime = lifetime,
+            owner_id = owner_id,
         };
         m_entities_to_add[m_add_index++] = e;
         m_add_index %= m_entities_to_add.Length;
@@ -117,7 +120,7 @@ public class ExampleBulletManager : MonoBehaviour
         m_work_data.delta_time = Time.deltaTime;
 
         // gather hit target data
-        var targets = ExampleEntity.GetInstances();
+        var targets = ExampleBulletCollider.GetInstances();
         if (m_work_data.targets.Length < targets.Count)
         {
             m_work_data.targets = new HitTarget[Mathf.Max(m_work_data.targets.Length * 2, targets.Count)];
@@ -125,10 +128,11 @@ public class ExampleBulletManager : MonoBehaviour
         m_work_data.num_targets = targets.Count;
         for (int i = 0; i < targets.Count; ++i )
         {
-            ExampleEntity t = targets[i];
+            ExampleBulletCollider t = targets[i];
             m_work_data.targets[i].position = t.GetTransform().position;
             m_work_data.targets[i].radius = t.m_hit_radius;
-            m_work_data.targets[i].entity = t;
+            m_work_data.targets[i].id = t.m_id;
+            m_work_data.targets[i].collider = t;
         }
 
         m_num_active_tasks = m_num_tasks;
@@ -161,7 +165,7 @@ public class ExampleBulletManager : MonoBehaviour
         {
             if (m_work_data.targets[i].num_hits > 0)
             {
-                m_work_data.targets[i].entity.AddDamage((float)m_work_data.targets[i].num_hits);
+                m_work_data.targets[i].collider.m_num_hits = m_work_data.targets[i].num_hits;
                 m_work_data.targets[i].num_hits = 0;
             }
         }
@@ -187,8 +191,11 @@ public class ExampleBulletManager : MonoBehaviour
             m_entities[bi].lifetime -= dt;
 
             Vector3 pos = m_entities[bi].position;
+            int owner_id = m_entities[bi].owner_id;
             for (int ei = 0; ei < m_work_data.num_targets; ++ei )
             {
+                if (m_work_data.targets[ei].id == owner_id) continue;
+
                 Vector3 diff = m_work_data.targets[ei].position - pos;
                 if (diff.magnitude <= m_work_data.targets[ei].radius)
                 {
