@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Threading;
-using System.Windows.Forms;
 
 public class BatchRendererTest : MonoBehaviour
 {
