@@ -30,9 +30,10 @@ public static class BatchRendererUtil
 
 
 
+    const int max_vertices = 65000; // Mesh's limitation
+
     public static Mesh CreateExpandedMesh(Mesh mesh, out int instances_par_batch)
     {
-        const int max_vertices = 65000; // Mesh's limitation
         Vector3[] vertices_base = mesh.vertices;
         Vector3[] normals_base = (mesh.normals == null || mesh.normals.Length == 0) ? null : mesh.normals;
         Vector2[] uv_base = (mesh.uv == null || mesh.uv.Length == 0) ? null : mesh.uv;
@@ -96,6 +97,25 @@ public static class BatchRendererUtil
         ret.colors = colors;
         ret.uv2 = idata;
         ret.triangles = indices;
+        return ret;
+    }
+
+
+    public static Mesh CreateDataTransferMesh(Mesh mesh, int target_width, int target_height)
+    {
+        Vector3[] vertices = new Vector3[max_vertices];
+        for(int yi = 0; yi < target_height; ++yi) {
+            for (int xi = 0; xi < target_width; ++xi)
+            {
+                int i = target_width * yi + xi;
+                vertices[i] = new Vector3(i, xi, yi);
+                if (i == max_vertices - 1) goto loop_end;
+            }
+        }
+        loop_end:
+
+        Mesh ret = new Mesh();
+        ret.vertices = vertices;
         return ret;
     }
 }
