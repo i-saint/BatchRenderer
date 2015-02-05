@@ -48,9 +48,7 @@ public class CustumDataBatchRenderer<InstanceData> : BatchRendererBase
 
     public int m_sizeof_instance_data;
 
-    protected ComputeBuffer m_draw_data_buffer;
     protected DrawData[] m_draw_data = new DrawData[1];
-    protected List<ComputeBuffer> m_batch_data_buffers;
     protected InstanceData[] m_instance_data;
     protected ComputeBuffer m_instance_buffer;
     protected RenderTexture m_instance_texture;
@@ -62,17 +60,7 @@ public class CustumDataBatchRenderer<InstanceData> : BatchRendererBase
     public override Material CloneMaterial(int nth)
     {
         Material m = new Material(m_material);
-        m.SetBuffer("g_draw_data", m_draw_data_buffer);
-        m.SetBuffer("g_instance_buffer", m_instance_buffer);
-
-
-        ComputeBuffer batch_data_buffer = new ComputeBuffer(1, BatchData.size);
-        BatchData[] batch_data = new BatchData[1];
-        batch_data[0].begin = nth * m_instances_par_batch;
-        batch_data[0].end = (nth + 1) * m_instances_par_batch;
-        batch_data_buffer.SetData(batch_data);
-        m.SetBuffer("g_batch_data", batch_data_buffer);
-        m_batch_data_buffers.Add(batch_data_buffer);
+        m.SetInt("g_batch_begin", nth * m_instances_par_batch);
 
         // fix rendering order for transparent objects
         if (m.renderQueue >= 3000)
@@ -83,31 +71,30 @@ public class CustumDataBatchRenderer<InstanceData> : BatchRendererBase
     }
 
 
-    public virtual void ReleaseBuffers()
+    public virtual void ReleaseGPUResources()
     {
-        if (m_draw_data_buffer != null) { m_draw_data_buffer.Release(); m_draw_data_buffer = null; }
         m_instance_buffer.Release();
-        m_batch_data_buffers.ForEach((e) => { e.Release(); });
-        m_batch_data_buffers.Clear();
         m_materials.Clear();
     }
 
-    public virtual void ResetBuffers()
+    public virtual void ResetGPUResoures()
     {
-        ReleaseBuffers();
+        ReleaseGPUResources();
 
         m_instance_data = new InstanceData[m_max_instances];
-        m_draw_data_buffer = new ComputeBuffer(1, DrawData.size);
         m_instance_buffer = new ComputeBuffer(m_max_instances, m_sizeof_instance_data);
 
-        UploadInstanceData();
+        UpdateGPUResources();
     }
 
-    public override void UploadInstanceData()
+    public override void UpdateGPUResources()
     {
-        m_draw_data[0].num_instances = m_instance_count;
-        m_draw_data[0].scale = m_scale;
-        m_draw_data_buffer.SetData(m_draw_data);
+        m_materials.ForEach((v) =>
+        {
+            v.SetInt("g_num_max_instances", m_max_instances);
+            v.SetInt("g_num_instances", m_instance_count);
+            v.SetVector("g_scale", m_scale);
+        });
     }
 
 
@@ -116,12 +103,12 @@ public class CustumDataBatchRenderer<InstanceData> : BatchRendererBase
         base.OnEnable();
         if (m_mesh == null) return;
 
-        ResetBuffers();
+        ResetGPUResoures();
     }
 
     public override void OnDisable()
     {
         base.OnDisable();
-        ReleaseBuffers();
+        ReleaseGPUResources();
     }
 }

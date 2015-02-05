@@ -2,7 +2,6 @@
 
 void ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 normal, inout float2 texcoord, inout float4 color)
 {
-#ifdef WITH_STRUCTURED_BUFFER
     int instance_id = GetBatchBegin() + id.x;
     if(instance_id >= GetNumInstances()) {
         vertex.xyz *= 0.0;
@@ -36,9 +35,6 @@ void ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 normal
     if(data_flags & DataFlag_Color) {
         color *= GetInstanceColor(instance_id);
     }
-#else
-    vertex.xyz *= 0.0;
-#endif
 }
 
 
@@ -63,7 +59,6 @@ bool ApplyViewPlaneProjection(inout float4 vertex, float3 pos)
 
 void ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout float3 normal, inout float2 texcoord, inout float4 color)
 {
-#ifdef WITH_STRUCTURED_BUFFER
     int instance_id = GetBatchBegin() + id.x;
     if(instance_id >= GetNumInstances()) {
         vertex.xyz *= 0.0;
@@ -92,9 +87,6 @@ void ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout floa
     if(data_flags & DataFlag_Color) {
         color *= GetInstanceColor(instance_id);
     }
-#else
-    vertex.xyz *= 0.0;
-#endif
 }
 
 

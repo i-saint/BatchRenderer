@@ -1,3 +1,7 @@
+//// uncomment this to use always use StructuredBuffer
+//#define ALWAYS_USE_BUFFER
+
+
 #ifdef SHADER_API_PSSL
 #   define COLOR  SV_Target
 #   define COLOR0 SV_Target0
@@ -115,52 +119,28 @@ float3 project_to_plane(Plane plane, float3 pos)
 
 
 
-#define DataFlag_Translation (1 << 0)
-#define DataFlag_Rotation    (1 << 1)
-#define DataFlag_Scale       (1 << 2)
-#define DataFlag_Color       (1 << 3)
-#define DataFlag_Emission    (1 << 4)
-#define DataFlag_UVOffset    (1 << 5)
+#define DataFlag_Translation    (1 << 0)
+#define DataFlag_Rotation       (1 << 1)
+#define DataFlag_Scale          (1 << 2)
+#define DataFlag_Color          (1 << 3)
+#define DataFlag_Emission       (1 << 4)
+#define DataFlag_UVOffset       (1 << 5)
+#define DataFlag_UseBuffer      (1 << 6)
 
-#ifdef WITH_STRUCTURED_BUFFER
-struct DrawData
-{
-    int data_flags;
-    int num_max_instances;
-    int num_instances;
-    float3 scale;
-};
 
-struct BatchData
-{
-    int begin;
-    int end;
-};
+int     g_data_flags;
+int     g_num_instances;
+float4  g_scale;
+float4  g_texel_size;
 
-StructuredBuffer<DrawData>      g_draw_data;
-StructuredBuffer<BatchData>     g_batch_data;
-StructuredBuffer<float3>        g_instance_buffer_t;
-StructuredBuffer<float4>        g_instance_buffer_r;
-StructuredBuffer<float3>        g_instance_buffer_s;
-StructuredBuffer<float4>        g_instance_buffer_color;
-StructuredBuffer<float4>        g_instance_buffer_emission;
-StructuredBuffer<float4>        g_instance_buffer_uv;
+int     g_batch_begin;
 
-int     GetDataFlags()          { return g_draw_data[0].data_flags; }
-int     GetNumMaxInstances()    { return g_draw_data[0].num_max_instances; }
-int     GetNumInstances()       { return g_draw_data[0].num_instances; }
-float3  GetBaseScale()          { return g_draw_data[0].scale; }
-int     GetBatchBegin()         { return g_batch_data[0].begin; }
-int     GetBatchEnd()           { return g_batch_data[0].end; }
-int     GetInstanceID(float2 i) { return i.x + GetBatchBegin(); }
-float3  GetInstanceTranslation(int i)   { return g_instance_buffer_t[i]; }
-float4  GetInstanceRotation(int i)      { return g_instance_buffer_r[i]; }
-float3  GetInstanceScale(int i)         { return g_instance_buffer_s[i]; }
-float4  GetInstanceColor(int i)         { return g_instance_buffer_color[i]; }
-float4  GetInstanceEmission(int i)      { return g_instance_buffer_emission[i]; }
-float4  GetInstanceUVOffset(int i)      { return g_instance_buffer_uv[i]; }
+int     GetDataFlags()          { return g_data_flags; }
+int     GetNumInstances()       { return g_num_instances; }
+float3  GetBaseScale()          { return g_scale.xyz; }
+int     GetBatchBegin()         { return g_batch_begin; }
+int     GetInstanceID(float2 i) { return i.x + g_batch_begin; }
 
-#else // WITH_STRUCTURED_BUFFER
 
 sampler2D g_instance_texture_t;
 sampler2D g_instance_texture_r;
@@ -169,19 +149,58 @@ sampler2D g_instance_texture_color;
 sampler2D g_instance_texture_emission;
 sampler2D g_instance_texture_uv;
 
-/* todo
-int     GetDataFlags()          {  }
-int     GetNumMaxInstances()    {  }
-int     GetNumInstances()       {  }
-float3  GetBaseScale()          {  }
-int     GetBatchBegin()         {  }
-int     GetBatchEnd()           {  }
-float3  GetInstanceTranslation(int i)   {  }
-float4  GetInstanceRotation(int i)      {  }
-float3  GetInstanceScale(int i)         {  }
-float4  GetInstanceColor(int i)         {  }
-float4  GetInstanceEmission(int i)      {  }
-float4  GetInstanceUVOffset(int i)      {  }
-*/
+float4  InstanceTexcoord(int i)         { return float4(g_texel_size.xy*float2(i&1023, i>>10), 0.0, 0.0); }
+float3  GetInstanceTranslationT(int i)  { return tex2Dlod(g_instance_texture_t, InstanceTexcoord(i)).xyz;    }
+float4  GetInstanceRotationT(int i)     { return tex2Dlod(g_instance_texture_r, InstanceTexcoord(i));        }
+float3  GetInstanceScaleT(int i)        { return tex2Dlod(g_instance_texture_s, InstanceTexcoord(i)).xyz;    }
+float4  GetInstanceColorT(int i)        { return tex2Dlod(g_instance_texture_color, InstanceTexcoord(i));    }
+float4  GetInstanceEmissionT(int i)     { return tex2Dlod(g_instance_texture_emission, InstanceTexcoord(i)); }
+float4  GetInstanceUVOffsetT(int i)     { return tex2Dlod(g_instance_texture_uv, InstanceTexcoord(i));       }
+
+
+#ifdef WITH_STRUCTURED_BUFFER
+
+StructuredBuffer<float3>        g_instance_buffer_t;
+StructuredBuffer<float4>        g_instance_buffer_r;
+StructuredBuffer<float3>        g_instance_buffer_s;
+StructuredBuffer<float4>        g_instance_buffer_color;
+StructuredBuffer<float4>        g_instance_buffer_emission;
+StructuredBuffer<float4>        g_instance_buffer_uv;
+
+float3  GetInstanceTranslationB(int i)   { return g_instance_buffer_t[i];       }
+float4  GetInstanceRotationB(int i)      { return g_instance_buffer_r[i];       }
+float3  GetInstanceScaleB(int i)         { return g_instance_buffer_s[i];       }
+float4  GetInstanceColorB(int i)         { return g_instance_buffer_color[i];   }
+float4  GetInstanceEmissionB(int i)      { return g_instance_buffer_emission[i];}
+float4  GetInstanceUVOffsetB(int i)      { return g_instance_buffer_uv[i];      }
+
+#endif // WITH_STRUCTURED_BUFFER
+
+
+
+#ifdef WITH_STRUCTURED_BUFFER
+#ifdef ALWAYS_USE_BUFFER
+float3  GetInstanceTranslation(int i)   { return GetInstanceTranslationB(i); }
+float4  GetInstanceRotation(int i)      { return GetInstanceRotationB(i);    }
+float3  GetInstanceScale(int i)         { return GetInstanceScaleB(i);       }
+float4  GetInstanceColor(int i)         { return GetInstanceColorB(i);       }
+float4  GetInstanceEmission(int i)      { return GetInstanceEmissionB(i);    }
+float4  GetInstanceUVOffset(int i)      { return GetInstanceUVOffsetB(i);    }
+#else  // ALWAYS_USE_BUFFER
+float3  GetInstanceTranslation(int i)   { return (GetDataFlags() & DataFlag_UseBuffer) ? GetInstanceTranslationB(i) : GetInstanceTranslationT(i); }
+float4  GetInstanceRotation(int i)      { return (GetDataFlags() & DataFlag_UseBuffer) ? GetInstanceRotationB(i)    : GetInstanceRotationT(i);    }
+float3  GetInstanceScale(int i)         { return (GetDataFlags() & DataFlag_UseBuffer) ? GetInstanceScaleB(i)       : GetInstanceScaleT(i);       }
+float4  GetInstanceColor(int i)         { return (GetDataFlags() & DataFlag_UseBuffer) ? GetInstanceColorB(i)       : GetInstanceColorT(i);       }
+float4  GetInstanceEmission(int i)      { return (GetDataFlags() & DataFlag_UseBuffer) ? GetInstanceEmissionB(i)    : GetInstanceEmissionT(i);    }
+float4  GetInstanceUVOffset(int i)      { return (GetDataFlags() & DataFlag_UseBuffer) ? GetInstanceUVOffsetB(i)    : GetInstanceUVOffsetT(i);    }
+#endif // ALWAYS_USE_BUFFER
+#else  // WITH_STRUCTURED_BUFFER
+
+float3  GetInstanceTranslation(int i)   { return GetInstanceTranslationT(i); }
+float4  GetInstanceRotation(int i)      { return GetInstanceRotationT(i);    }
+float3  GetInstanceScale(int i)         { return GetInstanceScaleT(i);       }
+float4  GetInstanceColor(int i)         { return GetInstanceColorT(i);       }
+float4  GetInstanceEmission(int i)      { return GetInstanceEmissionT(i);    }
+float4  GetInstanceUVOffset(int i)      { return GetInstanceUVOffsetT(i);    }
 
 #endif // WITH_STRUCTURED_BUFFER

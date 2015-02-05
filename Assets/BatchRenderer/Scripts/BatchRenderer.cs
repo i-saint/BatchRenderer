@@ -161,26 +161,7 @@ public class BatchRenderer : BatchRendererBase
         Color       = 1 << 3,
         Emission    = 1 << 4,
         UVOffset    = 1 << 5,
-    }
-
-    [System.Serializable]
-    public struct DrawData
-    {
-        public const int size = 24;
-
-        public int data_flags;
-        public int num_max_instances;
-        public int num_instances;
-        public Vector3 scale;
-    }
-
-    [System.Serializable]
-    public struct BatchData
-    {
-        public const int size = 8;
-
-        public int begin;
-        public int end;
+        UseBuffer   = 1 << 6,
     }
 
     [System.Serializable]
@@ -294,12 +275,10 @@ public class BatchRenderer : BatchRendererBase
     public bool m_enable_emission;
     public bool m_enable_uv_offset;
 
+    protected int m_data_flags;
+
     protected Mesh m_data_transfer_mesh;
     protected Material m_data_transfer_material;
-
-    protected ComputeBuffer m_draw_data_buffer;
-    protected DrawData[] m_draw_data = new DrawData[1];
-    protected List<ComputeBuffer> m_batch_data_buffers;
 
     protected InstanceData m_instance_data;
     protected InstanceBuffer m_instance_buffer;
@@ -312,11 +291,8 @@ public class BatchRenderer : BatchRendererBase
 
     public void ReleaseGPUData()
     {
-        if (m_draw_data_buffer != null) { m_draw_data_buffer.Release(); m_draw_data_buffer = null; }
         if (m_instance_buffer != null) { m_instance_buffer.Release(); }
         if (m_instance_texture != null) { m_instance_texture.Release(); }
-        m_batch_data_buffers.ForEach((e) => { e.Release(); });
-        m_batch_data_buffers.Clear();
         m_materials.Clear();
     }
 
@@ -325,19 +301,18 @@ public class BatchRenderer : BatchRendererBase
         ReleaseGPUData();
 
         m_instance_data.Resize(m_max_instances);
-        m_draw_data_buffer = new ComputeBuffer(1, DrawData.size);
         m_instance_buffer.Allocate(m_max_instances);
 
         // set default values
-        UploadInstanceData();
+        UpdateGPUResources();
     }
 
     public override Material CloneMaterial(int nth)
     {
         Material m = new Material(m_material);
-        if (m_data_transfer_mode == DataTransferMode.Buffer)
+        m.SetInt("g_batch_begin", nth * m_instances_par_batch);
+        if (m_instance_buffer != null)
         {
-            m.SetBuffer("g_draw_data", m_draw_data_buffer);
             m.SetBuffer("g_instance_buffer_t", m_instance_buffer.translation);
             m.SetBuffer("g_instance_buffer_r", m_instance_buffer.rotation);
             m.SetBuffer("g_instance_buffer_s", m_instance_buffer.scale);
@@ -345,7 +320,7 @@ public class BatchRenderer : BatchRendererBase
             m.SetBuffer("g_instance_buffer_emission", m_instance_buffer.emission);
             m.SetBuffer("g_instance_buffer_uv", m_instance_buffer.uv_offset);
         }
-        else
+        if (m_instance_texture != null)
         {
             m.SetTexture("g_instance_texture_t", m_instance_texture.translation);
             m.SetTexture("g_instance_texture_r", m_instance_texture.rotation);
@@ -355,14 +330,6 @@ public class BatchRenderer : BatchRendererBase
             m.SetTexture("g_instance_texture_uv", m_instance_texture.uv_offset);
         }
 
-
-        ComputeBuffer batch_data_buffer = new ComputeBuffer(1, BatchData.size);
-        BatchData[] batch_data = new BatchData[1];
-        batch_data[0].begin = nth * m_instances_par_batch;
-        batch_data[0].end = (nth + 1) * m_instances_par_batch;
-        batch_data_buffer.SetData(batch_data);
-        m_batch_data_buffers.Add(batch_data_buffer);
-        m.SetBuffer("g_batch_data", batch_data_buffer);
         // fix rendering order for transparent objects
         if (m.renderQueue >= 3000)
         {
@@ -371,7 +338,7 @@ public class BatchRenderer : BatchRendererBase
         return m;
     }
 
-    public override void UploadInstanceData()
+    public override void UpdateGPUResources()
     {
         switch(m_data_transfer_mode)
         {
@@ -385,11 +352,17 @@ public class BatchRenderer : BatchRendererBase
                 UploadInstanceData_TextureWithPlugin();
                 break;
         }
+        m_materials.ForEach((v) =>
+        {
+            v.SetInt("g_data_flags", m_data_flags);
+            v.SetInt("g_num_instances", m_instance_count);
+            v.SetVector("g_scale", m_scale);
+        });
     }
 
     public void UploadInstanceData_Buffer()
     {
-        int data_flags = (int)DataFlags.Translation;
+        int data_flags = (int)DataFlags.UseBuffer | (int)DataFlags.Translation;
         m_instance_buffer.translation.SetData(m_instance_data.translation);
         if (m_enable_rotation)
         {
@@ -416,11 +389,7 @@ public class BatchRenderer : BatchRendererBase
             data_flags |= (int)DataFlags.UVOffset;
             m_instance_buffer.uv_offset.SetData(m_instance_data.uv_offset);
         }
-
-        m_draw_data[0].data_flags = data_flags;
-        m_draw_data[0].num_instances = m_instance_count;
-        m_draw_data[0].scale = m_scale;
-        m_draw_data_buffer.SetData(m_draw_data);
+        m_data_flags = data_flags;
     }
 
     public void UploadInstanceData_TextureWithMesh()
@@ -445,7 +414,6 @@ public class BatchRenderer : BatchRendererBase
             m_data_transfer_mode = DataTransferMode.TextureWithMesh;
         }
 
-        m_batch_data_buffers = new List<ComputeBuffer>();
         m_instance_data = new InstanceData();
         if (m_data_transfer_mode == DataTransferMode.Buffer)
         {

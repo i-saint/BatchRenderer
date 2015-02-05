@@ -9,7 +9,6 @@ SubShader {
     LOD 200
 
 CGPROGRAM
-#pragma target 5.0
 #pragma surface surf Lambert vertex:vert
 #include "UnityCG.cginc"
 #include "BatchRenderer.cginc"

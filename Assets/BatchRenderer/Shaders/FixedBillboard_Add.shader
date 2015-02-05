@@ -13,7 +13,6 @@ Category {
     SubShader {
         Pass {
 CGPROGRAM
-#pragma target 5.0
 #pragma vertex vert_fixed
 #pragma fragment frag
 
