@@ -1,5 +1,8 @@
-//// uncomment this to use always use StructuredBuffer
-//#define ALWAYS_USE_BUFFER
+//// flag to always use StructuredBuffer as instance data source
+//#define ALWAYS_USE_BUFFER_DATA_SOURCE
+
+//// flag to always use Texture as instance data source
+//#define ALWAYS_USE_TEXTURE_DATA_SOURCE
 
 
 #ifdef SHADER_API_PSSL
@@ -11,7 +14,7 @@
 #   define DEPTH SV_Depth
 #endif
 
-#if defined(SHADER_API_D3D11) || defined(SHADER_API_PSSL)
+#if (defined(SHADER_API_D3D11) || defined(SHADER_API_PSSL)) && !defined(ALWAYS_USE_TEXTURE_DATA_SOURCE)
     #define WITH_STRUCTURED_BUFFER
 #endif
 
@@ -179,21 +182,21 @@ float4  GetInstanceUVOffsetB(int i)      { return g_instance_buffer_uv[i];      
 
 
 #ifdef WITH_STRUCTURED_BUFFER
-#ifdef ALWAYS_USE_BUFFER
+#ifdef ALWAYS_USE_BUFFER_DATA_SOURCE
 float3  GetInstanceTranslation(int i)   { return GetInstanceTranslationB(i); }
 float4  GetInstanceRotation(int i)      { return GetInstanceRotationB(i);    }
 float3  GetInstanceScale(int i)         { return GetInstanceScaleB(i);       }
 float4  GetInstanceColor(int i)         { return GetInstanceColorB(i);       }
 float4  GetInstanceEmission(int i)      { return GetInstanceEmissionB(i);    }
 float4  GetInstanceUVOffset(int i)      { return GetInstanceUVOffsetB(i);    }
-#else  // ALWAYS_USE_BUFFER
+#else  // ALWAYS_USE_BUFFER_DATA_SOURCE
 float3  GetInstanceTranslation(int i)   { return (GetDataFlags() & DataFlag_UseBuffer) ? GetInstanceTranslationB(i) : GetInstanceTranslationT(i); }
 float4  GetInstanceRotation(int i)      { return (GetDataFlags() & DataFlag_UseBuffer) ? GetInstanceRotationB(i)    : GetInstanceRotationT(i);    }
 float3  GetInstanceScale(int i)         { return (GetDataFlags() & DataFlag_UseBuffer) ? GetInstanceScaleB(i)       : GetInstanceScaleT(i);       }
 float4  GetInstanceColor(int i)         { return (GetDataFlags() & DataFlag_UseBuffer) ? GetInstanceColorB(i)       : GetInstanceColorT(i);       }
 float4  GetInstanceEmission(int i)      { return (GetDataFlags() & DataFlag_UseBuffer) ? GetInstanceEmissionB(i)    : GetInstanceEmissionT(i);    }
 float4  GetInstanceUVOffset(int i)      { return (GetDataFlags() & DataFlag_UseBuffer) ? GetInstanceUVOffsetB(i)    : GetInstanceUVOffsetT(i);    }
-#endif // ALWAYS_USE_BUFFER
+#endif // ALWAYS_USE_BUFFER_DATA_SOURCE
 #else  // WITH_STRUCTURED_BUFFER
 
 float3  GetInstanceTranslation(int i)   { return GetInstanceTranslationT(i); }
