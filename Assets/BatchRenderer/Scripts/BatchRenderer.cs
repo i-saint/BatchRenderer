@@ -226,7 +226,7 @@ public class BatchRenderer : BatchRendererBase
     // I will need this when I make OpenGL implementation
     public class InstanceTexture
     {
-        const int texture_width = 1024;
+        const int texture_width = 64;
 
         public RenderTexture translation;
         public RenderTexture rotation;
