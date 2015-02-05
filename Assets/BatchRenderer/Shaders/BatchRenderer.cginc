@@ -152,7 +152,7 @@ sampler2D g_instance_texture_color;
 sampler2D g_instance_texture_emission;
 sampler2D g_instance_texture_uv;
 
-float4  InstanceTexcoord(int i)         { return float4(g_texel_size.xy*float2(i&1023, i>>10), 0.0, 0.0); }
+float4  InstanceTexcoord(int i)         { return float4(g_texel_size.xy*float2((i&1023) + 0.5, (i>>10) + 0.5), 0.0, 0.0); }
 float3  GetInstanceTranslationT(int i)  { return tex2Dlod(g_instance_texture_t, InstanceTexcoord(i)).xyz;    }
 float4  GetInstanceRotationT(int i)     { return tex2Dlod(g_instance_texture_r, InstanceTexcoord(i));        }
 float3  GetInstanceScaleT(int i)        { return tex2Dlod(g_instance_texture_s, InstanceTexcoord(i)).xyz;    }

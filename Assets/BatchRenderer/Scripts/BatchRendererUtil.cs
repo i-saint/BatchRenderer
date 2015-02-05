@@ -28,6 +28,19 @@ public static class BatchRendererUtil
             (1.0f - rect.yMax) / th);
     }
 
+    public enum DataConversion
+    {
+        Float3ToFloat4,
+        Float4ToFloat4,
+    }
+    [DllImport("CopyToTexture")]
+    public static extern void CopyToTexture(System.IntPtr texptr, int width, int height, System.IntPtr dataptr, int data_num, DataConversion conv);
+
+    public static void CopyToTexture(RenderTexture rt, System.Array data, int data_num, DataConversion conv)
+    {
+        System.IntPtr dataptr = Marshal.UnsafeAddrOfPinnedArrayElement(data, 0);
+        CopyToTexture(rt.GetNativeTexturePtr(), rt.width, rt.height, dataptr, data_num, conv);
+    }
 
 
     const int max_vertices = 65000; // Mesh's limitation
@@ -117,6 +130,11 @@ public static class BatchRendererUtil
         Mesh ret = new Mesh();
         ret.vertices = vertices;
         return ret;
+    }
+
+    public static int ceildiv(int v, int d)
+    {
+        return v/d + (v%d==0 ? 0 : 1);
     }
 }
 

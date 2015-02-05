@@ -248,7 +248,7 @@ public class BatchRenderer : BatchRendererBase
         RenderTexture CreateDataTexture(int num_max_instances)
         {
             int width = texture_width;
-            int height = num_max_instances / texture_width + (num_max_instances % texture_width != 0 ? 1 : 0);
+            int height = BatchRendererUtil.ceildiv(num_max_instances, texture_width);
             var r = new RenderTexture(width, height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Default);
             r.filterMode = FilterMode.Point;
             r.Create();
@@ -283,6 +283,7 @@ public class BatchRenderer : BatchRendererBase
     protected InstanceData m_instance_data;
     protected InstanceBuffer m_instance_buffer;
     protected InstanceTexture m_instance_texture;
+    protected Vector4 m_instance_texel_size;
 
 
     public InstanceBuffer GetInstanceBuffer() { return m_instance_buffer; }
@@ -301,7 +302,20 @@ public class BatchRenderer : BatchRendererBase
         ReleaseGPUData();
 
         m_instance_data.Resize(m_max_instances);
-        m_instance_buffer.Allocate(m_max_instances);
+        if (m_instance_buffer != null)
+        {
+            m_instance_buffer.Allocate(m_max_instances);
+        }
+        if (m_instance_texture != null)
+        {
+            m_instance_texture.Allocate(m_max_instances);
+            m_instance_texel_size = new Vector4(
+                1.0f / m_instance_texture.translation.width,
+                1.0f / m_instance_texture.translation.height,
+                m_instance_texture.translation.width,
+                m_instance_texture.translation.height);
+        }
+
 
         // set default values
         UpdateGPUResources();
@@ -357,6 +371,7 @@ public class BatchRenderer : BatchRendererBase
             v.SetInt("g_data_flags", m_data_flags);
             v.SetInt("g_num_instances", m_instance_count);
             v.SetVector("g_scale", m_scale);
+            v.SetVector("g_texel_size", m_instance_texel_size);
         });
     }
 
@@ -399,7 +414,34 @@ public class BatchRenderer : BatchRendererBase
 
     public void UploadInstanceData_TextureWithPlugin()
     {
-        // todo
+        int data_flags = (int)DataFlags.Translation;
+        BatchRendererUtil.CopyToTexture(m_instance_texture.translation, m_instance_data.translation, m_instance_count, BatchRendererUtil.DataConversion.Float3ToFloat4);
+        if (m_enable_rotation)
+        {
+            data_flags |= (int)DataFlags.Rotation;
+            BatchRendererUtil.CopyToTexture(m_instance_texture.rotation, m_instance_data.rotation, m_instance_count, BatchRendererUtil.DataConversion.Float4ToFloat4);
+        }
+        if (m_enable_scale)
+        {
+            data_flags |= (int)DataFlags.Scale;
+            BatchRendererUtil.CopyToTexture(m_instance_texture.scale, m_instance_data.scale, m_instance_count, BatchRendererUtil.DataConversion.Float3ToFloat4);
+        }
+        if (m_enable_color)
+        {
+            data_flags |= (int)DataFlags.Color;
+            BatchRendererUtil.CopyToTexture(m_instance_texture.color, m_instance_data.color, m_instance_count, BatchRendererUtil.DataConversion.Float4ToFloat4);
+        }
+        if (m_enable_emission)
+        {
+            data_flags |= (int)DataFlags.Emission;
+            BatchRendererUtil.CopyToTexture(m_instance_texture.emission, m_instance_data.emission, m_instance_count, BatchRendererUtil.DataConversion.Float4ToFloat4);
+        }
+        if (m_enable_uv_offset)
+        {
+            data_flags |= (int)DataFlags.UVOffset;
+            BatchRendererUtil.CopyToTexture(m_instance_texture.uv_offset, m_instance_data.uv_offset, m_instance_count, BatchRendererUtil.DataConversion.Float4ToFloat4);
+        }
+        m_data_flags = data_flags;
     }
 
 
