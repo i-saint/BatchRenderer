@@ -46,9 +46,9 @@ public static class BatchRendererUtil
         CopyToTexture(rt.GetNativeTexturePtr(), rt.width, rt.height, dataptr, data_num, conv);
     }
 
-    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Vector3[] data, int data_num, DataConversion conv)
+    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Vector3[] data, int data_num)
     {
-        mesh.normals = data;
+        mesh.vertices = data;
         mesh.UploadMeshData(false);
         mat.SetPass(0);
         mat.SetInt("g_begin", 0);
@@ -56,11 +56,19 @@ public static class BatchRendererUtil
         Graphics.DrawMeshNow(mesh, Matrix4x4.identity);
         Graphics.SetRenderTarget(null);
     }
-    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Vector4[] data, int data_num, DataConversion conv)
+    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Vector4[] data, int data_num)
     {
-        mesh.tangents = data;
+        Vector3[] vertices = mesh.vertices;
+        Vector2[] uv = mesh.uv;
+        for (int i = 0; i < data_num; ++i)
+        {
+            vertices[i] = data[i];
+            uv[i].y = data[i].w;
+        }
+        mesh.vertices = vertices;
+        mesh.uv = uv;
         mesh.UploadMeshData(false);
-        mat.SetPass(1);
+        mat.SetPass(0);
         mat.SetInt("g_begin", 0);
         Graphics.SetRenderTarget(rt);
         Graphics.DrawMeshNow(mesh, Matrix4x4.identity);
@@ -139,21 +147,20 @@ public static class BatchRendererUtil
 
     public static Mesh CreateDataTransferMesh(int num_vertices)
     {
-        Vector3[] vertices = new Vector3[Mathf.Min(num_vertices, max_vertices)];
-        Vector3[] normals = new Vector3[Mathf.Min(num_vertices, max_vertices)];
-        Vector4[] tangents = new Vector4[Mathf.Min(num_vertices, max_vertices)];
-        int[] indices = new int[Mathf.Min(num_vertices, max_vertices)];
+        int n = Mathf.Min(num_vertices, max_vertices);
+        Vector3[] vertices = new Vector3[n];
+        Vector2[] uv = new Vector2[n];
+        int[] indices = new int[n];
         for (int i = 0; i < num_vertices; ++i )
         {
-            vertices[i] = new Vector3(i, 0, 0);
+            uv[i].x = i;
             indices[i] = i;
         }
 
         Mesh ret = new Mesh();
         ret.MarkDynamic();
         ret.vertices = vertices;
-        ret.normals = normals;
-        ret.tangents = tangents;
+        ret.uv = uv;
         ret.SetIndices(indices, MeshTopology.Points, 0);
         return ret;
     }

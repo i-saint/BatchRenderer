@@ -10,8 +10,7 @@ CGINCLUDE
 struct ia_out
 {
     float4 vertex : POSITION;
-    float3 data3 : NORMAL;
-    float4 data4 : TANGENT;
+    float2 uv : TEXCOORD0;
 };
 
 struct vs_out
@@ -28,7 +27,7 @@ struct ps_out
 int g_begin;
 float4 g_texel;
 
-float2 InstanceIDToScreenPosition(float id)
+float4 InstanceIDToScreenPosition(float id)
 {
     id += g_begin;
     float xi = fmod(id, g_texel.z);
@@ -38,22 +37,14 @@ float2 InstanceIDToScreenPosition(float id)
 #if UNITY_UV_STARTS_AT_TOP
     pos.y *= -1.0;
 #endif
-    return pos;
+    return float4(pos, 0.0, 1.0);
 }
 
-vs_out vert1(ia_out io)
+vs_out vert(ia_out io)
 {
     vs_out o;
-    o.vertex = float4(InstanceIDToScreenPosition(io.vertex.x), 0.0, 1.0);
-    o.data = io.data3.xyzz;
-    return o;
-}
-
-vs_out vert2(ia_out io)
-{
-    vs_out o;
-    o.vertex = float4(InstanceIDToScreenPosition(io.vertex.x), 0.0, 1.0);
-    o.data = io.data4;
+    o.vertex = InstanceIDToScreenPosition(io.uv.x);
+    o.data = float4(io.vertex.xyz, io.uv.y);
     return o;
 }
 
@@ -66,21 +57,11 @@ ENDCG
 
     Pass {
         CGPROGRAM
-        #pragma vertex vert1
-        #pragma fragment frag
         #ifdef SHADER_API_OPENGL
             #pragma glsl
         #endif
-        ENDCG
-    }
-
-    Pass {
-        CGPROGRAM
-        #pragma vertex vert2
+        #pragma vertex vert
         #pragma fragment frag
-        #ifdef SHADER_API_OPENGL
-            #pragma glsl
-        #endif
         ENDCG
     }
 }

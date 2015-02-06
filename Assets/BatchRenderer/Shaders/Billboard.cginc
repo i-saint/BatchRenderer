@@ -8,7 +8,6 @@ void ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 normal
         return;
     }
 
-    int data_flags = GetDataFlags();
     float3 camera_pos = _WorldSpaceCameraPos.xyz;
     float3 pos = GetInstanceTranslation(instance_id);
     float3 look = normalize(camera_pos-pos);
@@ -16,11 +15,11 @@ void ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 normal
     float3 up = mul(axis_rotation_matrix33(axis, 90.0), look);
 
     vertex.xyz *= GetBaseScale();
-    if(data_flags & DataFlag_Scale) {
+    if(GetFlag_Scale()) {
         vertex.xyz *= GetInstanceScale(instance_id);
     }
     vertex.xyz = mul(look_matrix33(look, up), vertex.xyz);
-    if(data_flags & DataFlag_Rotation) {
+    if(GetFlag_Rotation()) {
         float3x3 rot = quaternion_to_matrix33(GetInstanceRotation(instance_id));
         vertex.xyz = mul(rot, vertex.xyz);
         normal = mul(rot, normal);
@@ -28,11 +27,11 @@ void ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 normal
     vertex.xyz += pos;
     vertex = mul(UNITY_MATRIX_VP, vertex);
 
-    if(data_flags & DataFlag_UVOffset) {
+    if(GetFlag_UVOffset()) {
         float4 u = GetInstanceUVOffset(instance_id);
         texcoord = texcoord*u.xy + u.zw;
     }
-    if(data_flags & DataFlag_Color) {
+    if(GetFlag_Color()) {
         color *= GetInstanceColor(instance_id);
     }
 }
@@ -65,13 +64,12 @@ void ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout floa
         return;
     }
 
-    int data_flags = GetDataFlags();
     float3 pos = GetInstanceTranslation(instance_id);
     vertex.xyz *= GetBaseScale();
-    if(data_flags & DataFlag_Scale) {
+    if(GetFlag_Scale()) {
         vertex.xyz *= GetInstanceScale(instance_id);
     }
-    if(data_flags & DataFlag_Rotation) {
+    if(GetFlag_Rotation()) {
         float3x3 rot = quaternion_to_matrix33(GetInstanceRotation(instance_id));
         vertex.xyz = mul(rot, vertex.xyz);
         normal = mul(rot, normal);
@@ -80,11 +78,11 @@ void ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout floa
         return;
     }
 
-    if(data_flags & DataFlag_UVOffset) {
+    if(GetFlag_UVOffset()) {
         float4 u = GetInstanceUVOffset(instance_id);
         texcoord = texcoord*u.xy + u.zw;
     }
-    if(data_flags & DataFlag_Color) {
+    if(GetFlag_Color()) {
         color *= GetInstanceColor(instance_id);
     }
 }

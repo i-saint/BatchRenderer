@@ -8,27 +8,25 @@ void ApplyInstanceTransform(float2 id, inout float4 vertex, inout float3 normal,
         return;
     }
 
-    int data_flags = GetDataFlags();
-
     vertex.xyz *= GetBaseScale();
-    if(data_flags & DataFlag_Scale) {
+    if(GetFlag_Scale()) {
         vertex.xyz *= GetInstanceScale(instance_id);
     }
-    if(data_flags & DataFlag_Rotation) {
+    if(GetFlag_Rotation()) {
         float3x3 rot = quaternion_to_matrix33(GetInstanceRotation(instance_id));
         vertex.xyz = mul(rot, vertex.xyz);
         normal = mul(rot, normal);
     }
     vertex.xyz += GetInstanceTranslation(instance_id);
 
-    if(data_flags & DataFlag_UVOffset) {
+    if(GetFlag_UVOffset()) {
         float4 u = GetInstanceUVOffset(instance_id);
         texcoord = texcoord*u.xy + u.zw;
     }
-    if(data_flags & DataFlag_Color) {
+    if(GetFlag_Color()) {
         color *= GetInstanceColor(instance_id);
     }
-    if(data_flags & DataFlag_Emission) {
+    if(GetFlag_Emission()) {
         emission += GetInstanceEmission(instance_id);
     }
 }

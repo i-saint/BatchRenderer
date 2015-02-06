@@ -1,5 +1,7 @@
 ﻿using UnityEngine;
+#if UNITY_EDITOR
 using UnityEditor;
+#endif
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -251,7 +253,21 @@ public class BatchRenderer : BatchRendererBase
         {
             int width = texture_width;
             int height = BatchRendererUtil.ceildiv(num_max_instances, texture_width);
-            var r = new RenderTexture(width, height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Default);
+            RenderTexture r = null;
+            if (SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.ARGBFloat))
+            {
+                r = new RenderTexture(width, height, 0, RenderTextureFormat.ARGBFloat, RenderTextureReadWrite.Default);
+            }
+            else if (SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.ARGBHalf))
+            {
+                Debug.Log("RenderTextureFormat.ARGBFloat is not supported. use RenderTextureFormat.ARGBHalf");
+                r = new RenderTexture(width, height, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Default);
+            }
+            else
+            {
+                Debug.Log("RenderTextureFormat.ARGBFloat and RenderTextureFormat.ARGBHalf are not supported. give up.");
+                return null;
+            }
             r.filterMode = FilterMode.Point;
             r.Create();
             return r;
@@ -277,7 +293,7 @@ public class BatchRenderer : BatchRendererBase
     public bool m_enable_emission;
     public bool m_enable_uv_offset;
 
-    protected int m_data_flags;
+    public bool m_dbg_show_data_texture = false;
 
     protected Mesh m_data_transfer_mesh;
     [SerializeField] protected Material m_data_transfer_material;
@@ -327,6 +343,14 @@ public class BatchRenderer : BatchRendererBase
     {
         Material m = new Material(m_material);
         m.SetInt("g_batch_begin", nth * m_instances_par_batch);
+        m.SetInt("g_flag_rotation", m_enable_rotation ? 1 : 0);
+        m.SetInt("g_flag_scale", m_enable_scale ? 1 : 0);
+        m.SetInt("g_flag_color", m_enable_color ? 1 : 0);
+        m.SetInt("g_flag_emission", m_enable_emission ? 1 : 0);
+        m.SetInt("g_flag_uvoffset", m_enable_uv_offset ? 1 : 0);
+        m.SetInt("g_flag_use_buffer", m_data_transfer_mode==DataTransferMode.Buffer ? 1 : 0);
+        m.SetVector("g_texel_size", m_instance_texel_size);
+
         if (m_instance_buffer != null)
         {
             m.SetBuffer("g_instance_buffer_t", m_instance_buffer.translation);
@@ -370,10 +394,8 @@ public class BatchRenderer : BatchRendererBase
         }
         m_materials.ForEach((v) =>
         {
-            v.SetInt("g_data_flags", m_data_flags);
             v.SetInt("g_num_instances", m_instance_count);
             v.SetVector("g_scale", m_scale);
-            v.SetVector("g_texel_size", m_instance_texel_size);
         });
     }
 
@@ -406,40 +428,38 @@ public class BatchRenderer : BatchRendererBase
             data_flags |= (int)DataFlags.UVOffset;
             m_instance_buffer.uv_offset.SetData(m_instance_data.uv_offset);
         }
-        m_data_flags = data_flags;
     }
 
     public void UploadInstanceData_TextureWithMesh()
     {
         int data_flags = (int)DataFlags.Translation;
         m_data_transfer_material.SetVector("g_texel", m_instance_texel_size);
-        BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.translation, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.translation, m_instance_count, BatchRendererUtil.DataConversion.Float3ToFloat4);
+        BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.translation, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.translation, m_instance_count);
         if (m_enable_rotation)
         {
             data_flags |= (int)DataFlags.Rotation;
-            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.rotation, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.rotation, m_instance_count, BatchRendererUtil.DataConversion.Float4ToFloat4);
+            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.rotation, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.rotation, m_instance_count);
         }
         if (m_enable_scale)
         {
             data_flags |= (int)DataFlags.Scale;
-            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.scale, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.scale, m_instance_count, BatchRendererUtil.DataConversion.Float3ToFloat4);
+            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.scale, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.scale, m_instance_count);
         }
         if (m_enable_color)
         {
             data_flags |= (int)DataFlags.Color;
-            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.color, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.color, m_instance_count, BatchRendererUtil.DataConversion.Float4ToFloat4);
+            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.color, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.color, m_instance_count);
         }
         if (m_enable_emission)
         {
             data_flags |= (int)DataFlags.Emission;
-            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.emission, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.emission, m_instance_count, BatchRendererUtil.DataConversion.Float4ToFloat4);
+            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.emission, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.emission, m_instance_count);
         }
         if (m_enable_uv_offset)
         {
             data_flags |= (int)DataFlags.UVOffset;
-            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.uv_offset, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.uv_offset, m_instance_count, BatchRendererUtil.DataConversion.Float4ToFloat4);
+            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.uv_offset, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.uv_offset, m_instance_count);
         }
-        m_data_flags = data_flags;
     }
 
     public void UploadInstanceData_TextureWithPlugin()
@@ -471,12 +491,13 @@ public class BatchRenderer : BatchRendererBase
             data_flags |= (int)DataFlags.UVOffset;
             BatchRendererUtil.CopyToTexture(m_instance_texture.uv_offset, m_instance_data.uv_offset, m_instance_count, BatchRendererUtil.DataConversion.Float4ToFloat4);
         }
-        m_data_flags = data_flags;
     }
 
     void Reset()
     {
+#if UNITY_EDITOR
         m_data_transfer_material = (Material)AssetDatabase.LoadAssetAtPath("Assets/BatchRenderer/Materials/DataTransfer.mat", typeof(Material));
+#endif
     }
 
     public override void OnEnable()
@@ -498,7 +519,6 @@ public class BatchRenderer : BatchRendererBase
         else
         {
             m_instance_texture = new InstanceTexture();
-
             if (m_data_transfer_mode == DataTransferMode.TextureWithMesh)
             {
                 m_data_transfer_mesh = BatchRendererUtil.CreateDataTransferMesh(m_max_instances);
@@ -512,5 +532,13 @@ public class BatchRenderer : BatchRendererBase
     {
         base.OnDisable();
         ReleaseGPUData();
+    }
+
+    void OnGUI()
+    {
+        if (m_instance_texture != null && m_dbg_show_data_texture)
+        {
+            GUI.DrawTexture(new Rect(5, 5, 128, 128), m_instance_texture.translation);
+        }
     }
 }

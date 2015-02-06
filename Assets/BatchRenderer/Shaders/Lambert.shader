@@ -9,10 +9,10 @@ SubShader {
     LOD 200
 
 CGPROGRAM
-#pragma surface surf Lambert vertex:vert
 #ifdef SHADER_API_OPENGL
     #pragma glsl
 #endif
+#pragma surface surf Lambert vertex:vert
 #include "UnityCG.cginc"
 #include "BatchRenderer.cginc"
 #include "Surface.cginc"
@@ -27,7 +27,7 @@ sampler2D _MainTex;
 float4 g_base_color;
 float4 g_base_emission;
 
-void vert (inout appdata_full v, out Input o)
+void vert(inout appdata_full v, out Input o)
 {
     UNITY_INITIALIZE_OUTPUT(Input,o);
 
@@ -40,7 +40,7 @@ void vert (inout appdata_full v, out Input o)
     o.emission = emission;
 }
 
-void surf (Input IN, inout SurfaceOutput o)
+void surf(Input IN, inout SurfaceOutput o)
 {
     fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * IN.color;
     o.Albedo = c.rgb;
