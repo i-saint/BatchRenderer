@@ -9,8 +9,10 @@ SubShader {
     LOD 200
 
 CGPROGRAM
-#ifdef SHADER_API_OPENGL
+#if defined(SHADER_API_OPENGL)
     #pragma glsl
+#elif defined(SHADER_API_D3D9)
+    #pragma target 3.0
 #endif
 #pragma surface surf Lambert vertex:vert
 #include "UnityCG.cginc"
@@ -37,9 +39,9 @@ void vert (inout appdata_full v, out Input o)
 
     float4 color = 0.0;
     float4 emission = 0.0;
-    ApplyInstanceTransform(v.texcoord1, v.vertex, v.normal, v.texcoord.xy, color, emission);
+    ApplyInstanceTransform(v.texcoord1.xy, v.vertex, v.normal, v.texcoord.xy, color, emission);
 
-    o.uv_MainTex = v.texcoord;
+    o.uv_MainTex = v.texcoord.xy;
     o.instance_position = GetInstanceTranslation(iid);
 }
 

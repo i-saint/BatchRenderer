@@ -18,6 +18,7 @@
     #define WITH_STRUCTURED_BUFFER
 #endif
 
+#define WITH_COLOR_PARAMETERS
 
 
 // utilities

@@ -9,8 +9,12 @@ SubShader {
     LOD 200
 
 CGPROGRAM
-#ifdef SHADER_API_OPENGL
+#if defined(SHADER_API_OPENGL)
     #pragma glsl
+#elif defined(SHADER_API_D3D9)
+    #define WITHOUT_INSTANCE_COLOR
+    #define WITHOUT_INSTANCE_EMISSION
+    #pragma target 3.0
 #endif
 #pragma surface surf Lambert vertex:vert
 #include "UnityCG.cginc"
@@ -33,9 +37,9 @@ void vert(inout appdata_full v, out Input o)
 
     float4 color = v.color * g_base_color;
     float4 emission = g_base_emission;
-    ApplyInstanceTransform(v.texcoord1, v.vertex, v.normal, v.texcoord.xy, color, emission);
+    ApplyInstanceTransform(v.texcoord1.xy, v.vertex, v.normal, v.texcoord.xy, color, emission);
 
-    o.uv_MainTex = v.texcoord;
+    o.uv_MainTex = v.texcoord.xy;
     o.color = color;
     o.emission = emission;
 }
@@ -45,7 +49,7 @@ void surf(Input IN, inout SurfaceOutput o)
     fixed4 c = tex2D(_MainTex, IN.uv_MainTex) * IN.color;
     o.Albedo = c.rgb;
     o.Alpha = c.a;
-    o.Emission = IN.emission;
+    o.Emission = IN.emission.xyz;
 }
 ENDCG
 }

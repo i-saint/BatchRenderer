@@ -1,5 +1,4 @@
 
-
 void ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 normal, inout float2 texcoord, inout float4 color)
 {
     int instance_id = GetBatchBegin() + id.x;
@@ -15,25 +14,33 @@ void ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 normal
     float3 up = mul(axis_rotation_matrix33(axis, 90.0), look);
 
     vertex.xyz *= GetBaseScale();
+#ifndef WITHOUT_INSTANCE_SCALE
     if(GetFlag_Scale()) {
         vertex.xyz *= GetInstanceScale(instance_id);
     }
+#endif
     vertex.xyz = mul(look_matrix33(look, up), vertex.xyz);
+#ifndef WITHOUT_INSTANCE_ROTATION
     if(GetFlag_Rotation()) {
         float3x3 rot = quaternion_to_matrix33(GetInstanceRotation(instance_id));
         vertex.xyz = mul(rot, vertex.xyz);
         normal = mul(rot, normal);
     }
+#endif
     vertex.xyz += pos;
     vertex = mul(UNITY_MATRIX_VP, vertex);
 
+#ifndef WITHOUT_INSTANCE_UVOFFSET
     if(GetFlag_UVOffset()) {
         float4 u = GetInstanceUVOffset(instance_id);
         texcoord = texcoord*u.xy + u.zw;
     }
+#endif
+#ifndef WITHOUT_INSTANCE_COLOR
     if(GetFlag_Color()) {
         color *= GetInstanceColor(instance_id);
     }
+#endif
 }
 
 
@@ -66,25 +73,33 @@ void ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout floa
 
     float3 pos = GetInstanceTranslation(instance_id);
     vertex.xyz *= GetBaseScale();
+#ifndef WITHOUT_INSTANCE_SCALE
     if(GetFlag_Scale()) {
         vertex.xyz *= GetInstanceScale(instance_id);
     }
+#endif
+#ifndef WITHOUT_INSTANCE_ROTATION
     if(GetFlag_Rotation()) {
         float3x3 rot = quaternion_to_matrix33(GetInstanceRotation(instance_id));
         vertex.xyz = mul(rot, vertex.xyz);
         normal = mul(rot, normal);
     }
+#endif
     if(!ApplyViewPlaneProjection(vertex, pos)) {
         return;
     }
 
+#ifndef WITHOUT_INSTANCE_UVOFFSET
     if(GetFlag_UVOffset()) {
         float4 u = GetInstanceUVOffset(instance_id);
         texcoord = texcoord*u.xy + u.zw;
     }
+#endif
+#ifndef WITHOUT_INSTANCE_COLOR
     if(GetFlag_Color()) {
         color *= GetInstanceColor(instance_id);
     }
+#endif
 }
 
 

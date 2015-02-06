@@ -74,6 +74,42 @@ public static class BatchRendererUtil
         Graphics.DrawMeshNow(mesh, Matrix4x4.identity);
         Graphics.SetRenderTarget(null);
     }
+    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Quaternion[] data, int data_num)
+    {
+        Vector3[] vertices = mesh.vertices;
+        Vector2[] uv = mesh.uv;
+        for (int i = 0; i < data_num; ++i)
+        {
+            vertices[i] = new Vector3(data[i].x, data[i].y, data[i].z);
+            uv[i].y = data[i].w;
+        }
+        mesh.vertices = vertices;
+        mesh.uv = uv;
+        mesh.UploadMeshData(false);
+        mat.SetPass(0);
+        mat.SetInt("g_begin", 0);
+        Graphics.SetRenderTarget(rt);
+        Graphics.DrawMeshNow(mesh, Matrix4x4.identity);
+        Graphics.SetRenderTarget(null);
+    }
+    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Color[] data, int data_num)
+    {
+        Vector3[] vertices = mesh.vertices;
+        Vector2[] uv = mesh.uv;
+        for (int i = 0; i < data_num; ++i)
+        {
+            vertices[i] = new Vector3(data[i].r, data[i].g, data[i].b);
+            uv[i].y = data[i].a;
+        }
+        mesh.vertices = vertices;
+        mesh.uv = uv;
+        mesh.UploadMeshData(false);
+        mat.SetPass(0);
+        mat.SetInt("g_begin", 0);
+        Graphics.SetRenderTarget(rt);
+        Graphics.DrawMeshNow(mesh, Matrix4x4.identity);
+        Graphics.SetRenderTarget(null);
+    }
 
 
     public static Mesh CreateExpandedMesh(Mesh mesh, out int instances_par_batch)

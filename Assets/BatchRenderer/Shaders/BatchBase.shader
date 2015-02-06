@@ -13,8 +13,10 @@ SubShader {
         Offset 1, 1
 
 CGPROGRAM
-#ifdef SHADER_API_OPENGL
+#if defined(SHADER_API_OPENGL)
     #pragma glsl
+#elif defined(SHADER_API_D3D9)
+    #pragma target 3.0
 #endif
 #pragma vertex vert
 #pragma fragment frag
@@ -38,7 +40,7 @@ v2f vert( appdata v )
 {
     float4 color_dummy = 0.0;
     float4 emission_dummy = 0.0;
-    ApplyInstanceTransform(v.texcoord1, v.vertex, v.normal, v.texcoord, color_dummy, emission_dummy);
+    ApplyInstanceTransform(v.texcoord1.xy, v.vertex, v.normal, v.texcoord, color_dummy, emission_dummy);
 
     v2f o;
     TRANSFER_SHADOW_CASTER(o)
@@ -61,8 +63,10 @@ ENDCG
         ZWrite On ZTest LEqual
 
 CGPROGRAM
-#ifdef SHADER_API_OPENGL
+#if defined(SHADER_API_OPENGL)
     #pragma glsl
+#elif defined(SHADER_API_D3D9)
+    #pragma target 3.0
 #endif
 #pragma vertex vert
 #pragma fragment frag
@@ -88,7 +92,7 @@ v2f vert( appdata v )
 {
     float4 color_dummy = 0.0;
     float4 emission_dummy = 0.0;
-    ApplyInstanceTransform(v.texcoord1, v.vertex, v.normal, v.texcoord, color_dummy, emission_dummy);
+    ApplyInstanceTransform(v.texcoord1.xy, v.vertex, v.normal, v.texcoord, color_dummy, emission_dummy);
 
     v2f o;
     TRANSFER_SHADOW_COLLECTOR(o)

@@ -9,24 +9,34 @@ void ApplyInstanceTransform(float2 id, inout float4 vertex, inout float3 normal,
     }
 
     vertex.xyz *= GetBaseScale();
+#ifndef WITHOUT_INSTANCE_SCALE
     if(GetFlag_Scale()) {
         vertex.xyz *= GetInstanceScale(instance_id);
     }
+#endif
+#ifndef WITHOUT_INSTANCE_ROTATION
     if(GetFlag_Rotation()) {
         float3x3 rot = quaternion_to_matrix33(GetInstanceRotation(instance_id));
         vertex.xyz = mul(rot, vertex.xyz);
         normal = mul(rot, normal);
     }
+#endif
     vertex.xyz += GetInstanceTranslation(instance_id);
 
+#ifndef WITHOUT_INSTANCE_UVOFFSET
     if(GetFlag_UVOffset()) {
         float4 u = GetInstanceUVOffset(instance_id);
         texcoord = texcoord*u.xy + u.zw;
     }
+#endif
+#ifndef WITHOUT_INSTANCE_COLOR
     if(GetFlag_Color()) {
         color *= GetInstanceColor(instance_id);
     }
+#endif
+#ifndef WITHOUT_INSTANCE_EMISSION
     if(GetFlag_Emission()) {
         emission += GetInstanceEmission(instance_id);
     }
+#endif
 }

@@ -34,7 +34,7 @@ public class BatchRenderer : BatchRendererBase
         if (i < m_max_instances)
         {
             m_instance_data.translation[i] = t;
-            m_instance_data.rotation[i] = new Vector4(r.x, r.y, r.z, r.w);
+            m_instance_data.rotation[i] = r;
         }
     }
     public void AddInstancesTR(Vector3[] t, Quaternion[] r, int start = 0, int length = 0)
@@ -53,7 +53,7 @@ public class BatchRenderer : BatchRendererBase
         if (i < m_max_instances)
         {
             m_instance_data.translation[i] = t;
-            m_instance_data.rotation[i] = new Vector4(r.x, r.y, r.z, r.w);
+            m_instance_data.rotation[i] = r;
             m_instance_data.scale[i] = s;
         }
     }
@@ -74,7 +74,7 @@ public class BatchRenderer : BatchRendererBase
         if (i < m_max_instances)
         {
             m_instance_data.translation[i] = t;
-            m_instance_data.rotation[i] = new Vector4(r.x, r.y, r.z, r.w);
+            m_instance_data.rotation[i] = r;
             m_instance_data.scale[i] = s;
             m_instance_data.color[i] = c;
         }
@@ -86,7 +86,7 @@ public class BatchRenderer : BatchRendererBase
         if (i < m_max_instances)
         {
             m_instance_data.translation[i] = t;
-            m_instance_data.rotation[i] = new Vector4(r.x, r.y, r.z, r.w);
+            m_instance_data.rotation[i] = r;
             m_instance_data.scale[i] = s;
             m_instance_data.color[i] = c;
             m_instance_data.emission[i] = e;
@@ -99,7 +99,7 @@ public class BatchRenderer : BatchRendererBase
         if (i < m_max_instances)
         {
             m_instance_data.translation[i] = t;
-            m_instance_data.rotation[i] = new Vector4(r.x, r.y, r.z, r.w);
+            m_instance_data.rotation[i] = r;
             m_instance_data.color[i] = c;
         }
     }
@@ -110,7 +110,7 @@ public class BatchRenderer : BatchRendererBase
         if (i < m_max_instances)
         {
             m_instance_data.translation[i] = t;
-            m_instance_data.rotation[i] = new Vector4(r.x, r.y, r.z, r.w);
+            m_instance_data.rotation[i] = r;
             m_instance_data.uv_offset[i] = uv;
         }
     }
@@ -121,7 +121,7 @@ public class BatchRenderer : BatchRendererBase
         if (i < m_max_instances)
         {
             m_instance_data.translation[i] = t;
-            m_instance_data.rotation[i] = new Vector4(r.x, r.y, r.z, r.w);
+            m_instance_data.rotation[i] = r;
             m_instance_data.color[i] = c;
             m_instance_data.uv_offset[i] = uv;
         }
@@ -133,7 +133,7 @@ public class BatchRenderer : BatchRendererBase
         if (i < m_max_instances)
         {
             m_instance_data.translation[i] = t;
-            m_instance_data.rotation[i] = new Vector4(r.x, r.y, r.z, r.w);
+            m_instance_data.rotation[i] = r;
             m_instance_data.scale[i] = s;
             m_instance_data.color[i] = c;
             m_instance_data.uv_offset[i] = uv;
@@ -171,19 +171,19 @@ public class BatchRenderer : BatchRendererBase
     public class InstanceData
     {
         public Vector3[] translation;
-        public Vector4[] rotation;
+        public Quaternion[] rotation;
         public Vector3[] scale;
-        public Vector4[] color;
-        public Vector4[] emission;
+        public Color[] color;
+        public Color[] emission;
         public Vector4[] uv_offset;
 
         public void Resize(int size)
         {
             translation = new Vector3[size];
-            rotation = new Vector4[size];
+            rotation = new Quaternion[size];
             scale = new Vector3[size];
-            color = new Vector4[size];
-            emission = new Vector4[size];
+            color = new Color[size];
+            emission = new Color[size];
             uv_offset = new Vector4[size];
 
             Vector3 default_scale = Vector3.one;
