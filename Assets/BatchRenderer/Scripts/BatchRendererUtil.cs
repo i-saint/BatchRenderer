@@ -28,11 +28,15 @@ public static class BatchRendererUtil
             (1.0f - rect.yMax) / th);
     }
 
+
+    const int max_vertices = 65000; // Mesh's limitation
+
     public enum DataConversion
     {
         Float3ToFloat4,
         Float4ToFloat4,
     }
+
     [DllImport("CopyToTexture")]
     public static extern void CopyToTexture(System.IntPtr texptr, int width, int height, System.IntPtr dataptr, int data_num, DataConversion conv);
 
@@ -42,8 +46,27 @@ public static class BatchRendererUtil
         CopyToTexture(rt.GetNativeTexturePtr(), rt.width, rt.height, dataptr, data_num, conv);
     }
 
+    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Vector3[] data, int data_num, DataConversion conv)
+    {
+        mesh.normals = data;
+        mesh.UploadMeshData(false);
+        mat.SetPass(0);
+        mat.SetInt("g_begin", 0);
+        Graphics.SetRenderTarget(rt);
+        Graphics.DrawMeshNow(mesh, Matrix4x4.identity);
+        Graphics.SetRenderTarget(null);
+    }
+    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Vector4[] data, int data_num, DataConversion conv)
+    {
+        mesh.tangents = data;
+        mesh.UploadMeshData(false);
+        mat.SetPass(1);
+        mat.SetInt("g_begin", 0);
+        Graphics.SetRenderTarget(rt);
+        Graphics.DrawMeshNow(mesh, Matrix4x4.identity);
+        Graphics.SetRenderTarget(null);
+    }
 
-    const int max_vertices = 65000; // Mesh's limitation
 
     public static Mesh CreateExpandedMesh(Mesh mesh, out int instances_par_batch)
     {
@@ -114,21 +137,24 @@ public static class BatchRendererUtil
     }
 
 
-    public static Mesh CreateDataTransferMesh(Mesh mesh, int target_width, int target_height)
+    public static Mesh CreateDataTransferMesh(int num_vertices)
     {
-        Vector3[] vertices = new Vector3[max_vertices];
-        for(int yi = 0; yi < target_height; ++yi) {
-            for (int xi = 0; xi < target_width; ++xi)
-            {
-                int i = target_width * yi + xi;
-                vertices[i] = new Vector3(i, xi, yi);
-                if (i == max_vertices - 1) goto loop_end;
-            }
+        Vector3[] vertices = new Vector3[Mathf.Min(num_vertices, max_vertices)];
+        Vector3[] normals = new Vector3[Mathf.Min(num_vertices, max_vertices)];
+        Vector4[] tangents = new Vector4[Mathf.Min(num_vertices, max_vertices)];
+        int[] indices = new int[Mathf.Min(num_vertices, max_vertices)];
+        for (int i = 0; i < num_vertices; ++i )
+        {
+            vertices[i] = new Vector3(i, 0, 0);
+            indices[i] = i;
         }
-        loop_end:
 
         Mesh ret = new Mesh();
+        ret.MarkDynamic();
         ret.vertices = vertices;
+        ret.normals = normals;
+        ret.tangents = tangents;
+        ret.SetIndices(indices, MeshTopology.Points, 0);
         return ret;
     }
 

@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using UnityEditor;
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -31,7 +32,7 @@ public class BatchRenderer : BatchRendererBase
         if (i < m_max_instances)
         {
             m_instance_data.translation[i] = t;
-            m_instance_data.rotation[i] = r;
+            m_instance_data.rotation[i] = new Vector4(r.x, r.y, r.z, r.w);
         }
     }
     public void AddInstancesTR(Vector3[] t, Quaternion[] r, int start = 0, int length = 0)
@@ -50,7 +51,7 @@ public class BatchRenderer : BatchRendererBase
         if (i < m_max_instances)
         {
             m_instance_data.translation[i] = t;
-            m_instance_data.rotation[i] = r;
+            m_instance_data.rotation[i] = new Vector4(r.x, r.y, r.z, r.w);
             m_instance_data.scale[i] = s;
         }
     }
@@ -71,7 +72,7 @@ public class BatchRenderer : BatchRendererBase
         if (i < m_max_instances)
         {
             m_instance_data.translation[i] = t;
-            m_instance_data.rotation[i] = r;
+            m_instance_data.rotation[i] = new Vector4(r.x, r.y, r.z, r.w);
             m_instance_data.scale[i] = s;
             m_instance_data.color[i] = c;
         }
@@ -83,7 +84,7 @@ public class BatchRenderer : BatchRendererBase
         if (i < m_max_instances)
         {
             m_instance_data.translation[i] = t;
-            m_instance_data.rotation[i] = r;
+            m_instance_data.rotation[i] = new Vector4(r.x, r.y, r.z, r.w);
             m_instance_data.scale[i] = s;
             m_instance_data.color[i] = c;
             m_instance_data.emission[i] = e;
@@ -96,7 +97,7 @@ public class BatchRenderer : BatchRendererBase
         if (i < m_max_instances)
         {
             m_instance_data.translation[i] = t;
-            m_instance_data.rotation[i] = r;
+            m_instance_data.rotation[i] = new Vector4(r.x, r.y, r.z, r.w);
             m_instance_data.color[i] = c;
         }
     }
@@ -107,7 +108,7 @@ public class BatchRenderer : BatchRendererBase
         if (i < m_max_instances)
         {
             m_instance_data.translation[i] = t;
-            m_instance_data.rotation[i] = r;
+            m_instance_data.rotation[i] = new Vector4(r.x, r.y, r.z, r.w);
             m_instance_data.uv_offset[i] = uv;
         }
     }
@@ -118,7 +119,7 @@ public class BatchRenderer : BatchRendererBase
         if (i < m_max_instances)
         {
             m_instance_data.translation[i] = t;
-            m_instance_data.rotation[i] = r;
+            m_instance_data.rotation[i] = new Vector4(r.x, r.y, r.z, r.w);
             m_instance_data.color[i] = c;
             m_instance_data.uv_offset[i] = uv;
         }
@@ -130,7 +131,7 @@ public class BatchRenderer : BatchRendererBase
         if (i < m_max_instances)
         {
             m_instance_data.translation[i] = t;
-            m_instance_data.rotation[i] = r;
+            m_instance_data.rotation[i] = new Vector4(r.x, r.y, r.z, r.w);
             m_instance_data.scale[i] = s;
             m_instance_data.color[i] = c;
             m_instance_data.uv_offset[i] = uv;
@@ -168,19 +169,19 @@ public class BatchRenderer : BatchRendererBase
     public class InstanceData
     {
         public Vector3[] translation;
-        public Quaternion[] rotation;
+        public Vector4[] rotation;
         public Vector3[] scale;
-        public Color[] color;
-        public Color[] emission;
+        public Vector4[] color;
+        public Vector4[] emission;
         public Vector4[] uv_offset;
 
         public void Resize(int size)
         {
             translation = new Vector3[size];
-            rotation = new Quaternion[size];
+            rotation = new Vector4[size];
             scale = new Vector3[size];
-            color = new Color[size];
-            emission = new Color[size];
+            color = new Vector4[size];
+            emission = new Vector4[size];
             uv_offset = new Vector4[size];
 
             Vector3 default_scale = Vector3.one;
@@ -192,6 +193,7 @@ public class BatchRenderer : BatchRendererBase
         }
     }
 
+    [System.Serializable]
     public class InstanceBuffer
     {
         public ComputeBuffer translation;
@@ -223,10 +225,10 @@ public class BatchRenderer : BatchRendererBase
         }
     }
 
-    // I will need this when I make OpenGL implementation
+    [System.Serializable]
     public class InstanceTexture
     {
-        const int texture_width = 64;
+        const int texture_width = 128;
 
         public RenderTexture translation;
         public RenderTexture rotation;
@@ -278,7 +280,7 @@ public class BatchRenderer : BatchRendererBase
     protected int m_data_flags;
 
     protected Mesh m_data_transfer_mesh;
-    protected Material m_data_transfer_material;
+    [SerializeField] protected Material m_data_transfer_material;
 
     protected InstanceData m_instance_data;
     protected InstanceBuffer m_instance_buffer;
@@ -409,7 +411,35 @@ public class BatchRenderer : BatchRendererBase
 
     public void UploadInstanceData_TextureWithMesh()
     {
-        // todo
+        int data_flags = (int)DataFlags.Translation;
+        m_data_transfer_material.SetVector("g_texel", m_instance_texel_size);
+        BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.translation, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.translation, m_instance_count, BatchRendererUtil.DataConversion.Float3ToFloat4);
+        if (m_enable_rotation)
+        {
+            data_flags |= (int)DataFlags.Rotation;
+            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.rotation, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.rotation, m_instance_count, BatchRendererUtil.DataConversion.Float4ToFloat4);
+        }
+        if (m_enable_scale)
+        {
+            data_flags |= (int)DataFlags.Scale;
+            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.scale, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.scale, m_instance_count, BatchRendererUtil.DataConversion.Float3ToFloat4);
+        }
+        if (m_enable_color)
+        {
+            data_flags |= (int)DataFlags.Color;
+            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.color, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.color, m_instance_count, BatchRendererUtil.DataConversion.Float4ToFloat4);
+        }
+        if (m_enable_emission)
+        {
+            data_flags |= (int)DataFlags.Emission;
+            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.emission, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.emission, m_instance_count, BatchRendererUtil.DataConversion.Float4ToFloat4);
+        }
+        if (m_enable_uv_offset)
+        {
+            data_flags |= (int)DataFlags.UVOffset;
+            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.uv_offset, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.uv_offset, m_instance_count, BatchRendererUtil.DataConversion.Float4ToFloat4);
+        }
+        m_data_flags = data_flags;
     }
 
     public void UploadInstanceData_TextureWithPlugin()
@@ -444,6 +474,10 @@ public class BatchRenderer : BatchRendererBase
         m_data_flags = data_flags;
     }
 
+    void Reset()
+    {
+        m_data_transfer_material = (Material)AssetDatabase.LoadAssetAtPath("Assets/BatchRenderer/Materials/DataTransfer.mat", typeof(Material));
+    }
 
     public override void OnEnable()
     {
@@ -464,6 +498,11 @@ public class BatchRenderer : BatchRendererBase
         else
         {
             m_instance_texture = new InstanceTexture();
+
+            if (m_data_transfer_mode == DataTransferMode.TextureWithMesh)
+            {
+                m_data_transfer_mesh = BatchRendererUtil.CreateDataTransferMesh(m_max_instances);
+            }
         }
 
         ResetGPUData();
