@@ -48,66 +48,86 @@ public static class BatchRendererUtil
 
     public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Vector3[] data, int data_num)
     {
-        mesh.vertices = data;
-        mesh.UploadMeshData(false);
-        mat.SetPass(0);
-        mat.SetInt("g_begin", 0);
         Graphics.SetRenderTarget(rt);
-        Graphics.DrawMeshNow(mesh, Matrix4x4.identity);
+        for (int i = 0; i < data_num; i += mesh.vertexCount)
+        {
+            Vector3[] vertices = mesh.vertices;
+            System.Array.Copy(data, i, vertices, 0, Mathf.Min(mesh.vertexCount, data_num - i));
+            mesh.vertices = vertices;
+            mesh.UploadMeshData(false);
+            mat.SetInt("g_begin", i);
+            mat.SetPass(0);
+            Graphics.DrawMeshNow(mesh, Matrix4x4.identity);
+        }
         Graphics.SetRenderTarget(null);
     }
     public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Vector4[] data, int data_num)
     {
-        Vector3[] vertices = mesh.vertices;
-        Vector2[] uv = mesh.uv;
-        for (int i = 0; i < data_num; ++i)
-        {
-            vertices[i] = data[i];
-            uv[i].y = data[i].w;
-        }
-        mesh.vertices = vertices;
-        mesh.uv = uv;
-        mesh.UploadMeshData(false);
-        mat.SetPass(0);
-        mat.SetInt("g_begin", 0);
         Graphics.SetRenderTarget(rt);
-        Graphics.DrawMeshNow(mesh, Matrix4x4.identity);
+        for (int i = 0; i < data_num; i += mesh.vertexCount)
+        {
+            int n = Mathf.Min(mesh.vertexCount, data_num - i);
+            Vector3[] vertices = mesh.vertices;
+            Vector2[] uv = mesh.uv;
+            for (int vi = 0; vi < n; ++vi)
+            {
+                var e = data[i + vi];
+                vertices[vi] = new Vector3(e.x, e.y, e.z);
+                uv[vi].y = e.w;
+            }
+            mesh.vertices = vertices;
+            mesh.uv = uv;
+            mesh.UploadMeshData(false);
+            mat.SetInt("g_begin", i);
+            mat.SetPass(0);
+            Graphics.DrawMeshNow(mesh, Matrix4x4.identity);
+        }
         Graphics.SetRenderTarget(null);
     }
     public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Quaternion[] data, int data_num)
     {
-        Vector3[] vertices = mesh.vertices;
-        Vector2[] uv = mesh.uv;
-        for (int i = 0; i < data_num; ++i)
-        {
-            vertices[i] = new Vector3(data[i].x, data[i].y, data[i].z);
-            uv[i].y = data[i].w;
-        }
-        mesh.vertices = vertices;
-        mesh.uv = uv;
-        mesh.UploadMeshData(false);
-        mat.SetPass(0);
-        mat.SetInt("g_begin", 0);
         Graphics.SetRenderTarget(rt);
-        Graphics.DrawMeshNow(mesh, Matrix4x4.identity);
+        for (int i = 0; i < data_num; i += mesh.vertexCount)
+        {
+            int n = Mathf.Min(mesh.vertexCount, data_num - i);
+            Vector3[] vertices = mesh.vertices;
+            Vector2[] uv = mesh.uv;
+            for (int vi = 0; vi < n; ++vi)
+            {
+                var e = data[i + vi];
+                vertices[vi] = new Vector3(e.x, e.y, e.z);
+                uv[vi].y = e.w;
+            }
+            mesh.vertices = vertices;
+            mesh.uv = uv;
+            mesh.UploadMeshData(false);
+            mat.SetInt("g_begin", i);
+            mat.SetPass(0);
+            Graphics.DrawMeshNow(mesh, Matrix4x4.identity);
+        }
         Graphics.SetRenderTarget(null);
     }
     public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Color[] data, int data_num)
     {
-        Vector3[] vertices = mesh.vertices;
-        Vector2[] uv = mesh.uv;
-        for (int i = 0; i < data_num; ++i)
-        {
-            vertices[i] = new Vector3(data[i].r, data[i].g, data[i].b);
-            uv[i].y = data[i].a;
-        }
-        mesh.vertices = vertices;
-        mesh.uv = uv;
-        mesh.UploadMeshData(false);
-        mat.SetPass(0);
-        mat.SetInt("g_begin", 0);
         Graphics.SetRenderTarget(rt);
-        Graphics.DrawMeshNow(mesh, Matrix4x4.identity);
+        for (int i = 0; i < data_num; i += mesh.vertexCount)
+        {
+            int n = Mathf.Min(mesh.vertexCount, data_num - i);
+            Vector3[] vertices = mesh.vertices;
+            Vector2[] uv = mesh.uv;
+            for (int vi = 0; vi < n; ++vi)
+            {
+                var e = data[i + vi];
+                vertices[vi] = new Vector3(e.r, e.g, e.b);
+                uv[vi].y = e.a;
+            }
+            mesh.vertices = vertices;
+            mesh.uv = uv;
+            mesh.UploadMeshData(false);
+            mat.SetInt("g_begin", i);
+            mat.SetPass(0);
+            Graphics.DrawMeshNow(mesh, Matrix4x4.identity);
+        }
         Graphics.SetRenderTarget(null);
     }
 
@@ -187,7 +207,7 @@ public static class BatchRendererUtil
         Vector3[] vertices = new Vector3[n];
         Vector2[] uv = new Vector2[n];
         int[] indices = new int[n];
-        for (int i = 0; i < num_vertices; ++i )
+        for (int i = 0; i < n; ++i)
         {
             uv[i].x = i;
             indices[i] = i;
