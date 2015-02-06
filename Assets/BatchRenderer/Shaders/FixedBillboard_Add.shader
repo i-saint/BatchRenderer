@@ -15,6 +15,9 @@ Category {
 CGPROGRAM
 #pragma vertex vert_fixed
 #pragma fragment frag
+#ifdef SHADER_API_OPENGL
+    #pragma glsl
+#endif
 
 #include "UnityCG.cginc"
 #include "BatchRenderer.cginc"

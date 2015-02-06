@@ -284,7 +284,7 @@ public class BatchRenderer : BatchRendererBase
 
     protected InstanceData m_instance_data;
     protected InstanceBuffer m_instance_buffer;
-    protected InstanceTexture m_instance_texture;
+    [SerializeField] protected InstanceTexture m_instance_texture;
     protected Vector4 m_instance_texel_size;
 
 

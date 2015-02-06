@@ -13,6 +13,9 @@ SubShader {
         Offset 1, 1
 
 CGPROGRAM
+#ifdef SHADER_API_OPENGL
+    #pragma glsl
+#endif
 #pragma vertex vert
 #pragma fragment frag
 #pragma multi_compile_shadowcaster
@@ -58,7 +61,9 @@ ENDCG
         ZWrite On ZTest LEqual
 
 CGPROGRAM
-#pragma target 5.0
+#ifdef SHADER_API_OPENGL
+    #pragma glsl
+#endif
 #pragma vertex vert
 #pragma fragment frag
 #pragma multi_compile_shadowcollector 

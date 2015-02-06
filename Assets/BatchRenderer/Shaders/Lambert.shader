@@ -10,6 +10,9 @@ SubShader {
 
 CGPROGRAM
 #pragma surface surf Lambert vertex:vert
+#ifdef SHADER_API_OPENGL
+    #pragma glsl
+#endif
 #include "UnityCG.cginc"
 #include "BatchRenderer.cginc"
 #include "Surface.cginc"

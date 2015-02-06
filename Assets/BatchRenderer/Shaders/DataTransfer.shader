@@ -35,7 +35,9 @@ float2 InstanceIDToScreenPosition(float id)
     float yi = floor(id / g_texel.z);
     float2 pixel_size = g_texel.xy * 2.0;
     float2 pos = pixel_size * (float2(xi, yi) + 0.5) - 1.0;
+#if UNITY_UV_STARTS_AT_TOP
     pos.y *= -1.0;
+#endif
     return pos;
 }
 
@@ -66,7 +68,7 @@ ENDCG
         CGPROGRAM
         #pragma vertex vert1
         #pragma fragment frag
-        #ifdef SHADER_API_OPENGL 
+        #ifdef SHADER_API_OPENGL
             #pragma glsl
         #endif
         ENDCG
@@ -76,7 +78,7 @@ ENDCG
         CGPROGRAM
         #pragma vertex vert2
         #pragma fragment frag
-        #ifdef SHADER_API_OPENGL 
+        #ifdef SHADER_API_OPENGL
             #pragma glsl
         #endif
         ENDCG
