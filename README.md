@@ -1,6 +1,6 @@
 # BatchRenderer
 ![alt text](Screenshots/sc2.png )  
-Unity で擬似的なインスタンス描画を実現するスクリプトです。パーティクル、弾幕などの描画に威力を発揮します。割とポータブルな作りになっており、D3D11、D3D9、OpenGL (Android)、PS4 などで動作します。  
+Unity で大量のオブジェクトを描画できるようにするスクリプトです。パーティクル、弾幕などの描画に威力を発揮します。割とポータブルな作りになっており、D3D11、D3D9、OpenGL、OpenGL ES、PS4 などで動作します。  
 [動作例](http://primitive-games.jp/Unity/CSharpBullet.html)
   
   
@@ -23,8 +23,7 @@ Billboard 系のシェーダはビルボードを実現するためのもので�
 基本的に板ポリゴン (Assets/BatchRenderer/Meshes/quad.asset) をメッシュに使いますが、板ポリゴン以外にも適用できます。   
 ![alt text](Screenshots/billboard.gif)  
 enable_uv_offset で UV オフセットを有効にすることで、スクリーンショットのようにテクスチャアニメーションもできます。  
-BatchRenderer 自身はソートはしないので、Billboard に限らず半透明オブジェクトを描く際は描画順に注意が必要です。  
-(AddInstance() した順に描くようになっています)
+BatchRenderer 自身はソートはしないので、Billboard に限らず半透明オブジェクトを描く際は描画順に注意が必要です。(AddInstance() した順に描くようになっています)
   
 FixedBillboard 系のシェーダもビルボードを実現するものですが、こちらは表示の中心位置に 3D 座標を使う以外は 2D 的な振る舞いをします。  
 スクリーンショットを見比べるとどういうことかわかりやすいと思います。下のスクリーンショットは上の Billboard と同じシーンで、シェーダだけが違います。Billboard だとパースがかかっている一方、FixedBillboard はかかっていないのが見て取れると思います。  
