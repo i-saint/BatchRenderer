@@ -1,7 +1,3 @@
-
-// --------------------------------------------------------------------------
-// Include headers for the graphics APIs we support
-
 #include "UnityPluginInterface.h"
 #include "CopyToTexture.h"
 
@@ -44,19 +40,3 @@ extern "C" void EXPORT_API CopyToTexture(void *texptr, int width, int height, vo
     g_c2t->copy(texptr, width, height, data, data_num, c);
 }
 
-
-
-const void* CopyToTextureBase::getDataPointer(const void *data, int data_num, DataConversion conv)
-{
-    if (conv == Float3ToFloat4) {
-        const float3 *src = (const float3*)data;
-        m_buffer.resize(data_num);
-        for (int i = 0; i < data_num; ++i) {
-            m_buffer[i] = (float4&)src[i];
-        }
-        return &m_buffer[0];
-    }
-    else {
-        return data;
-    }
-}

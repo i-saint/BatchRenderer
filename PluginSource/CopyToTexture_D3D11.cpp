@@ -48,7 +48,7 @@ void CopyToTextureD3D11::copy(void *texptr, int width, int height, const void *d
     box.bottom = ceildiv(data_num, width);
     box.front = 0;
     box.back = 1;
-    m_pImmediateContext->UpdateSubresource(tex, 0, &box, dataptr, width * 16, 0);
+    m_pImmediateContext->UpdateSubresource(tex, 0, &box, dataptr, getDataSize(width, conv), 0);
 }
 
 

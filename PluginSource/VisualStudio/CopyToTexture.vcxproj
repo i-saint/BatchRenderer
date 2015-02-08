@@ -185,6 +185,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\CopyToTexture.cpp" />
     <ClCompile Include="..\CopyToTexture_D3D11.cpp" />
     <ClCompile Include="..\CopyToTexture_OpenGL.cpp" />
     <ClCompile Include="..\UnityPluginInterface.cpp" />
