@@ -37,6 +37,7 @@ extern "C" void EXPORT_API UnityRenderEvent(int eventID)
 
 extern "C" void EXPORT_API CopyToTexture(void *texptr, int width, int height, void *data, int data_num, DataConversion c)
 {
+    if (texptr == nullptr) { return; }
     g_c2t->copy(texptr, width, height, data, data_num, c);
 }
 

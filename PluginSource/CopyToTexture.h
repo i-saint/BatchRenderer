@@ -49,7 +49,7 @@ public:
 
 protected:
     int getDataSize(int data_num, DataConversion conv);
-    const void* getDataPointer(const void *data, int data_num, DataConversion conv);
+    const void* getDataPointer(const void *data, int data_num, int reserve_size, DataConversion conv);
 
     std::vector<float4> m_bufferf;
     std::vector<half4> m_bufferh;

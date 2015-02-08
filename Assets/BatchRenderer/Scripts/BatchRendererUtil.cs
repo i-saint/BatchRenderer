@@ -43,17 +43,31 @@ public static class BatchRendererUtil
     [DllImport("CopyToTexture")]
     public static extern void CopyToTexture(System.IntPtr texptr, int width, int height, System.IntPtr dataptr, int data_num, DataConversion conv);
 
+    public static bool IsCopyToTextureAvailable()
+    {
+        try
+        {
+            CopyToTexture(System.IntPtr.Zero, 0, 0, System.IntPtr.Zero, 0, DataConversion.Float3ToFloat4);
+        }
+        catch(System.Exception)
+        {
+            return false;
+        }
+        return true;
+    }
+
     public static void CopyToTexture(RenderTexture rt, System.Array data, int data_num, DataConversion conv)
     {
         System.IntPtr dataptr = Marshal.UnsafeAddrOfPinnedArrayElement(data, 0);
         CopyToTexture(rt.GetNativeTexturePtr(), rt.width, rt.height, dataptr, data_num, conv);
     }
 
-    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Vector3[] data, int data_num, Vector3[] dst1)
+    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Vector3[] data, int data_num)
     {
         Graphics.SetRenderTarget(rt);
         for (int i = 0; i < data_num; i += mesh.vertexCount)
         {
+            var dst1 = mesh.vertices;
             System.Array.Copy(data, i, dst1, 0, Mathf.Min(mesh.vertexCount, data_num - i));
             mesh.vertices = dst1;
             mesh.UploadMeshData(false);
@@ -63,12 +77,14 @@ public static class BatchRendererUtil
         }
         Graphics.SetRenderTarget(null);
     }
-    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Vector4[] data, int data_num, Vector3[] dst1, Vector2[] dst2)
+    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Vector4[] data, int data_num)
     {
         Graphics.SetRenderTarget(rt);
         for (int i = 0; i < data_num; i += mesh.vertexCount)
         {
             int n = Mathf.Min(mesh.vertexCount, data_num - i);
+            var dst1 = mesh.vertices;
+            var dst2 = mesh.uv;
             for (int vi = 0; vi < n; ++vi)
             {
                 int ivi = i + vi;
@@ -85,14 +101,14 @@ public static class BatchRendererUtil
         }
         Graphics.SetRenderTarget(null);
     }
-    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Quaternion[] data, int data_num, Vector3[] dst1, Vector2[] dst2)
+    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Quaternion[] data, int data_num)
     {
         Graphics.SetRenderTarget(rt);
         for (int i = 0; i < data_num; i += mesh.vertexCount)
         {
-            //dst1 = mesh.vertices;
-            //dst2 = mesh.uv;
             int n = Mathf.Min(mesh.vertexCount, data_num - i);
+            var dst1 = mesh.vertices;
+            var dst2 = mesh.uv;
             for (int vi = 0; vi < n; ++vi)
             {
                 int ivi = i + vi;
@@ -109,12 +125,14 @@ public static class BatchRendererUtil
         }
         Graphics.SetRenderTarget(null);
     }
-    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Color[] data, int data_num, Vector3[] dst1, Vector2[] dst2)
+    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Color[] data, int data_num)
     {
         Graphics.SetRenderTarget(rt);
         for (int i = 0; i < data_num; i += mesh.vertexCount)
         {
             int n = Mathf.Min(mesh.vertexCount, data_num - i);
+            var dst1 = mesh.vertices;
+            var dst2 = mesh.uv;
             for (int vi = 0; vi < n; ++vi)
             {
                 int ivi = i + vi;
