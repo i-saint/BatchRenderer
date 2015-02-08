@@ -152,8 +152,8 @@ public class BatchRenderer : BatchRendererBase
     public enum DataTransferMode
     {
         Buffer,
-        TextureWithMesh,
         TextureWithPlugin,
+        TextureWithMesh,
     }
 
     public enum DataFlags
@@ -297,6 +297,8 @@ public class BatchRenderer : BatchRendererBase
 
     protected Mesh m_data_transfer_mesh;
     [SerializeField] protected Material m_data_transfer_material;
+    protected Vector3[] m_data_transfer_workdata1;
+    protected Vector2[] m_data_transfer_workdata2;
 
     protected InstanceData m_instance_data;
     protected InstanceBuffer m_instance_buffer;
@@ -434,31 +436,31 @@ public class BatchRenderer : BatchRendererBase
     {
         int data_flags = (int)DataFlags.Translation;
         m_data_transfer_material.SetVector("g_texel", m_instance_texel_size);
-        BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.translation, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.translation, m_instance_count);
+        BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.translation, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.translation, m_instance_count, m_data_transfer_workdata1);
         if (m_enable_rotation)
         {
             data_flags |= (int)DataFlags.Rotation;
-            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.rotation, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.rotation, m_instance_count);
+            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.rotation, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.rotation, m_instance_count, m_data_transfer_workdata1, m_data_transfer_workdata2);
         }
         if (m_enable_scale)
         {
             data_flags |= (int)DataFlags.Scale;
-            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.scale, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.scale, m_instance_count);
+            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.scale, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.scale, m_instance_count, m_data_transfer_workdata1);
         }
         if (m_enable_color)
         {
             data_flags |= (int)DataFlags.Color;
-            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.color, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.color, m_instance_count);
+            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.color, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.color, m_instance_count, m_data_transfer_workdata1, m_data_transfer_workdata2);
         }
         if (m_enable_emission)
         {
             data_flags |= (int)DataFlags.Emission;
-            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.emission, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.emission, m_instance_count);
+            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.emission, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.emission, m_instance_count, m_data_transfer_workdata1, m_data_transfer_workdata2);
         }
         if (m_enable_uv_offset)
         {
             data_flags |= (int)DataFlags.UVOffset;
-            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.uv_offset, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.uv_offset, m_instance_count);
+            BatchRendererUtil.CopyToTextureViaMesh(m_instance_texture.uv_offset, m_data_transfer_mesh, m_data_transfer_material, m_instance_data.uv_offset, m_instance_count, m_data_transfer_workdata1, m_data_transfer_workdata2);
         }
     }
 
@@ -522,6 +524,8 @@ public class BatchRenderer : BatchRendererBase
             if (m_data_transfer_mode == DataTransferMode.TextureWithMesh)
             {
                 m_data_transfer_mesh = BatchRendererUtil.CreateDataTransferMesh(m_max_instances);
+                m_data_transfer_workdata1 = new Vector3[m_data_transfer_mesh.vertexCount];
+                m_data_transfer_workdata2 = new Vector2[m_data_transfer_mesh.vertexCount];
             }
         }
 

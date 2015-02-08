@@ -31,10 +31,13 @@ public static class BatchRendererUtil
 
     const int max_vertices = 65000; // Mesh's limitation
 
+
     public enum DataConversion
     {
         Float3ToFloat4,
         Float4ToFloat4,
+        Float3ToHalf4,
+        Float4ToHalf4,
     }
 
     [DllImport("CopyToTexture")]
@@ -46,14 +49,13 @@ public static class BatchRendererUtil
         CopyToTexture(rt.GetNativeTexturePtr(), rt.width, rt.height, dataptr, data_num, conv);
     }
 
-    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Vector3[] data, int data_num)
+    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Vector3[] data, int data_num, Vector3[] dst1)
     {
         Graphics.SetRenderTarget(rt);
         for (int i = 0; i < data_num; i += mesh.vertexCount)
         {
-            Vector3[] vertices = mesh.vertices;
-            System.Array.Copy(data, i, vertices, 0, Mathf.Min(mesh.vertexCount, data_num - i));
-            mesh.vertices = vertices;
+            System.Array.Copy(data, i, dst1, 0, Mathf.Min(mesh.vertexCount, data_num - i));
+            mesh.vertices = dst1;
             mesh.UploadMeshData(false);
             mat.SetInt("g_begin", i);
             mat.SetPass(0);
@@ -61,22 +63,21 @@ public static class BatchRendererUtil
         }
         Graphics.SetRenderTarget(null);
     }
-    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Vector4[] data, int data_num)
+    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Vector4[] data, int data_num, Vector3[] dst1, Vector2[] dst2)
     {
         Graphics.SetRenderTarget(rt);
         for (int i = 0; i < data_num; i += mesh.vertexCount)
         {
             int n = Mathf.Min(mesh.vertexCount, data_num - i);
-            Vector3[] vertices = mesh.vertices;
-            Vector2[] uv = mesh.uv;
             for (int vi = 0; vi < n; ++vi)
             {
-                var e = data[i + vi];
-                vertices[vi] = new Vector3(e.x, e.y, e.z);
-                uv[vi].y = e.w;
+                int ivi = i + vi;
+                var e = data[ivi];
+                dst1[vi] = new Vector3(e.x, e.y, e.z);
+                dst2[vi] = new Vector2(vi, e.w);
             }
-            mesh.vertices = vertices;
-            mesh.uv = uv;
+            mesh.vertices = dst1;
+            mesh.uv = dst2;
             mesh.UploadMeshData(false);
             mat.SetInt("g_begin", i);
             mat.SetPass(0);
@@ -84,22 +85,23 @@ public static class BatchRendererUtil
         }
         Graphics.SetRenderTarget(null);
     }
-    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Quaternion[] data, int data_num)
+    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Quaternion[] data, int data_num, Vector3[] dst1, Vector2[] dst2)
     {
         Graphics.SetRenderTarget(rt);
         for (int i = 0; i < data_num; i += mesh.vertexCount)
         {
+            //dst1 = mesh.vertices;
+            //dst2 = mesh.uv;
             int n = Mathf.Min(mesh.vertexCount, data_num - i);
-            Vector3[] vertices = mesh.vertices;
-            Vector2[] uv = mesh.uv;
             for (int vi = 0; vi < n; ++vi)
             {
-                var e = data[i + vi];
-                vertices[vi] = new Vector3(e.x, e.y, e.z);
-                uv[vi].y = e.w;
+                int ivi = i + vi;
+                var e = data[ivi];
+                dst1[vi] = new Vector3(e.x, e.y, e.z);
+                dst2[vi] = new Vector2(vi, e.w);
             }
-            mesh.vertices = vertices;
-            mesh.uv = uv;
+            mesh.vertices = dst1;
+            mesh.uv = dst2;
             mesh.UploadMeshData(false);
             mat.SetInt("g_begin", i);
             mat.SetPass(0);
@@ -107,22 +109,21 @@ public static class BatchRendererUtil
         }
         Graphics.SetRenderTarget(null);
     }
-    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Color[] data, int data_num)
+    public static void CopyToTextureViaMesh(RenderTexture rt, Mesh mesh, Material mat, Color[] data, int data_num, Vector3[] dst1, Vector2[] dst2)
     {
         Graphics.SetRenderTarget(rt);
         for (int i = 0; i < data_num; i += mesh.vertexCount)
         {
             int n = Mathf.Min(mesh.vertexCount, data_num - i);
-            Vector3[] vertices = mesh.vertices;
-            Vector2[] uv = mesh.uv;
             for (int vi = 0; vi < n; ++vi)
             {
-                var e = data[i + vi];
-                vertices[vi] = new Vector3(e.r, e.g, e.b);
-                uv[vi].y = e.a;
+                int ivi = i + vi;
+                var e = data[ivi];
+                dst1[vi] = new Vector3(e.r, e.g, e.b);
+                dst2[vi] = new Vector2(vi, e.a);
             }
-            mesh.vertices = vertices;
-            mesh.uv = uv;
+            mesh.vertices = dst1;
+            mesh.uv = dst2;
             mesh.UploadMeshData(false);
             mat.SetInt("g_begin", i);
             mat.SetPass(0);
