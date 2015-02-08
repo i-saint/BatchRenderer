@@ -1,6 +1,6 @@
 # BatchRenderer
 ![alt text](Screenshots/sc2.png )  
-Unity で擬似的なインスタンス描画を実現するスクリプトです。パーティクル、弾幕などの描画に威力を発揮します。  
+Unity で擬似的なインスタンス描画を実現するスクリプトです。パーティクル、弾幕などの描画に威力を発揮します。割とポータブルな作りになっており、D3D11、D3D9、OpenGL (Android)、PS4 などで動作します。  
 [動作例](http://primitive-games.jp/Unity/CSharpBullet.html)
   
   
