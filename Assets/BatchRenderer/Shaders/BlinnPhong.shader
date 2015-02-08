@@ -1,4 +1,4 @@
-﻿Shader "BatchRenderer/Lambert" {
+﻿Shader "BatchRenderer/BlinnPhong" {
 Properties {
     g_base_color ("Base Color", Color) = (1,1,1,1)
     g_base_emission ("Emission", Color) = (0,0,0,0)
@@ -16,7 +16,7 @@ CGPROGRAM
     #define WITHOUT_INSTANCE_EMISSION
     #pragma target 3.0
 #endif
-#pragma surface surf Lambert vertex:vert
+#pragma surface surf BlinnPhong vertex:vert
 #include "UnityCG.cginc"
 #include "BatchRenderer.cginc"
 #include "Surface.cginc"

@@ -23,6 +23,7 @@ CGPROGRAM
 #pragma multi_compile_shadowcaster
 #include "UnityCG.cginc"
 #include "BatchRenderer.cginc"
+#define WITHOUT_COMMON_VERT_SURF
 #include "Surface.cginc"
 
 struct appdata {
@@ -40,7 +41,8 @@ v2f vert( appdata v )
 {
     float4 color_dummy = 0.0;
     float4 emission_dummy = 0.0;
-    ApplyInstanceTransform(v.texcoord1.xy, v.vertex, v.normal, v.texcoord, color_dummy, emission_dummy);
+    float4 tangent_dummy = 0.0;
+    ApplyInstanceTransform(v.texcoord1.xy, v.vertex, v.normal, tangent_dummy, v.texcoord, color_dummy, emission_dummy);
 
     v2f o;
     TRANSFER_SHADOW_CASTER(o)
@@ -75,6 +77,7 @@ CGPROGRAM
 #define SHADOW_COLLECTOR_PASS
 #include "UnityCG.cginc"
 #include "BatchRenderer.cginc"
+#define WITHOUT_COMMON_VERT_SURF
 #include "Surface.cginc"
 
 struct appdata {

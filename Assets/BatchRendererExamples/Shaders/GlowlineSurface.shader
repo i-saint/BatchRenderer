@@ -1,4 +1,4 @@
-Shader "BatchRendererExample/LambertWithGlowline" {
+Shader "BatchRendererExample/GlowlineSurface" {
 Properties {
     g_base_color ("Base Color", Color) = (1,1,1,1)
     g_base_emission ("Emission", Color) = (0,0,0,0)
@@ -14,9 +14,10 @@ CGPROGRAM
 #elif defined(SHADER_API_D3D9)
     #pragma target 3.0
 #endif
-#pragma surface surf Lambert vertex:vert
+#pragma surface surf BlinnPhong vertex:vert
 #include "UnityCG.cginc"
 #include "../../BatchRenderer/Shaders/BatchRenderer.cginc"
+#define WITHOUT_COMMON_VERT_SURF
 #include "../../BatchRenderer/Shaders/Surface.cginc"
 
 struct Input {
@@ -39,7 +40,7 @@ void vert (inout appdata_full v, out Input o)
 
     float4 color = 0.0;
     float4 emission = 0.0;
-    ApplyInstanceTransform(v.texcoord1.xy, v.vertex, v.normal, v.texcoord.xy, color, emission);
+    ApplyInstanceTransform(v.texcoord1.xy, v.vertex, v.normal, v.tangent, v.texcoord.xy, color, emission);
 
     o.uv_MainTex = v.texcoord.xy;
     o.instance_position = GetInstanceTranslation(iid);
@@ -98,7 +99,7 @@ float2 boxcell(float3 p3, float3 n)
 
 void surf (Input IN, inout SurfaceOutput o)
 {
-    float4 line_color = float4(1.0, 1.0, 2.0, 0.0);
+    float4 line_color = float4(0.5, 0.5, 1.0, 0.0);
     float2 dg = boxcell(IN.vertex_position.xyz*0.05, IN.vertex_normal.xyz);
     float pc = 1.0-clamp(1.0 - max(min(dg.x, 2.0)-1.0, 0.0)*2.0, 0.0, 1.0);
     float d = -length(IN.vertex_position+IN.instance_position.xyz)*0.15 - dg.y*0.5;

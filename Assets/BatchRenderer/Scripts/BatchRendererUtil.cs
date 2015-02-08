@@ -155,6 +155,7 @@ public static class BatchRendererUtil
     {
         Vector3[] vertices_base = mesh.vertices;
         Vector3[] normals_base = (mesh.normals == null || mesh.normals.Length == 0) ? null : mesh.normals;
+        Vector4[] tangents_base = (mesh.tangents == null || mesh.tangents.Length == 0) ? null : mesh.tangents;
         Vector2[] uv_base = (mesh.uv == null || mesh.uv.Length == 0) ? null : mesh.uv;
         Color[] colors_base = (mesh.colors == null || mesh.colors.Length == 0) ? null : mesh.colors;
         int[] indices_base = (mesh.triangles == null || mesh.triangles.Length == 0) ? null : mesh.triangles;
@@ -163,6 +164,7 @@ public static class BatchRendererUtil
         Vector3[] vertices = new Vector3[vertices_base.Length * instances_par_batch];
         Vector2[] idata = new Vector2[vertices_base.Length * instances_par_batch];
         Vector3[] normals = normals_base == null ? null : new Vector3[normals_base.Length * instances_par_batch];
+        Vector4[] tangents = tangents_base == null ? null : new Vector4[tangents_base.Length * instances_par_batch];
         Vector2[] uv = uv_base == null ? null : new Vector2[uv_base.Length * instances_par_batch];
         Color[] colors = colors_base == null ? null : new Color[colors_base.Length * instances_par_batch];
         int[] indices = indices_base == null ? null : new int[indices_base.Length * instances_par_batch];
@@ -181,6 +183,14 @@ public static class BatchRendererUtil
                 {
                     int i = ii * normals_base.Length + vi;
                     normals[i] = normals_base[vi];
+                }
+            }
+            if (tangents != null)
+            {
+                for (int vi = 0; vi < tangents_base.Length; ++vi)
+                {
+                    int i = ii * tangents_base.Length + vi;
+                    tangents[i] = tangents_base[vi];
                 }
             }
             if (uv != null)
@@ -212,6 +222,7 @@ public static class BatchRendererUtil
         Mesh ret = new Mesh();
         ret.vertices = vertices;
         ret.normals = normals;
+        ret.tangents = tangents;
         ret.uv = uv;
         ret.colors = colors;
         ret.uv2 = idata;
