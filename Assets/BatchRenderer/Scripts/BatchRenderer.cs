@@ -250,12 +250,12 @@ public class BatchRenderer : BatchRendererBase
             }
             else if (SystemInfo.SupportsRenderTextureFormat(RenderTextureFormat.ARGBHalf))
             {
-                Debug.Log("RenderTextureFormat.ARGBFloat is not supported. use RenderTextureFormat.ARGBHalf");
+                Debug.Log("BatchRenderer: float texture is not available. use half texture instead");
                 r = new RenderTexture(width, height, 0, RenderTextureFormat.ARGBHalf, RenderTextureReadWrite.Default);
             }
             else
             {
-                Debug.Log("RenderTextureFormat.ARGBFloat and RenderTextureFormat.ARGBHalf are not supported. give up.");
+                Debug.Log("BatchRenderer: both float and half texture are not available. give up.");
                 return null;
             }
 
@@ -488,7 +488,7 @@ public class BatchRenderer : BatchRendererBase
 
         if (m_data_transfer_mode == DataTransferMode.Buffer && !SystemInfo.supportsComputeShaders)
         {
-            Debug.Log("BatchRenderer: system does not support ComputeBuffer. fallback to TextureWithMesh data transfer mode.");
+            Debug.Log("BatchRenderer: ComputeBuffer is not available. fallback to TextureWithMesh data transfer mode.");
             m_data_transfer_mode = DataTransferMode.TextureWithMesh;
         }
         if (m_data_transfer_mode == DataTransferMode.TextureWithPlugin && !BatchRendererUtil.IsCopyToTextureAvailable())

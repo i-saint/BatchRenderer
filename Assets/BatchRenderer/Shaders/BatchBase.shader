@@ -29,6 +29,7 @@ CGPROGRAM
 struct appdata {
     float4 vertex : POSITION;
     float3 normal : NORMAL;
+    float4 tangent : TANGENT;
     float2 texcoord : TEXCOORD0;
     float2 texcoord1 : TEXCOORD1;
 };
@@ -41,8 +42,7 @@ v2f vert( appdata v )
 {
     float4 color_dummy = 0.0;
     float4 emission_dummy = 0.0;
-    float4 tangent_dummy = 0.0;
-    ApplyInstanceTransform(v.texcoord1.xy, v.vertex, v.normal, tangent_dummy, v.texcoord, color_dummy, emission_dummy);
+    ApplyInstanceTransform(v.texcoord1.xy, v.vertex, v.normal, v.tangent, v.texcoord, color_dummy, emission_dummy);
 
     v2f o;
     TRANSFER_SHADOW_CASTER(o)
@@ -83,6 +83,7 @@ CGPROGRAM
 struct appdata {
     float4 vertex : POSITION;
     float3 normal : NORMAL;
+    float4 tangent : TANGENT;
     float2 texcoord : TEXCOORD0;
     float2 texcoord1 : TEXCOORD1;
 };
@@ -95,7 +96,7 @@ v2f vert( appdata v )
 {
     float4 color_dummy = 0.0;
     float4 emission_dummy = 0.0;
-    ApplyInstanceTransform(v.texcoord1.xy, v.vertex, v.normal, v.texcoord, color_dummy, emission_dummy);
+    ApplyInstanceTransform(v.texcoord1.xy, v.vertex, v.normal, v.tangent, v.texcoord, color_dummy, emission_dummy);
 
     v2f o;
     TRANSFER_SHADOW_COLLECTOR(o)
