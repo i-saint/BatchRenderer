@@ -7,7 +7,7 @@ using System.Threading;
 
 public abstract class BatchRendererBase : MonoBehaviour
 {
-    public int m_max_instances = 1024 * 16;
+    public int m_max_instances = 1024 * 4;
     public Mesh m_mesh;
     public Material m_material;
     public LayerMask m_layer_selector = 1;

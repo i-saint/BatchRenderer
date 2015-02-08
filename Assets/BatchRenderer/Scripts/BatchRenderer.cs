@@ -277,13 +277,13 @@ public class BatchRenderer : BatchRendererBase
     }
 
 
-    public DataTransferMode m_data_transfer_mode;
     public bool m_enable_rotation;
     public bool m_enable_scale;
     public bool m_enable_color;
     public bool m_enable_emission;
     public bool m_enable_uv_offset;
 
+    public DataTransferMode m_data_transfer_mode;
     public bool m_dbg_show_data_texture = false;
 
     protected Mesh m_data_transfer_mesh;
@@ -474,12 +474,14 @@ public class BatchRenderer : BatchRendererBase
         }
     }
 
+#if UNITY_EDITOR
     void Reset()
     {
-#if UNITY_EDITOR
-        m_data_transfer_material = (Material)AssetDatabase.LoadAssetAtPath("Assets/BatchRenderer/Materials/DataTransfer.mat", typeof(Material));
-#endif
+        m_data_transfer_material = AssetDatabase.LoadAssetAtPath("Assets/BatchRenderer/Materials/DataTransfer.mat", typeof(Material)) as Material;
+        m_material = AssetDatabase.LoadAssetAtPath("Assets/BatchRenderer/Materials/BatchLambert.mat", typeof(Material)) as Material;
+        m_mesh = AssetDatabase.LoadAssetAtPath("Assets/BatchRenderer/Meshes/cube.asset", typeof(Mesh)) as Mesh;
     }
+#endif
 
     public override void OnEnable()
     {
