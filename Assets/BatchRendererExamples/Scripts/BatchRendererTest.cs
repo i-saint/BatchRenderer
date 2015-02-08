@@ -29,8 +29,6 @@ public class BatchRendererTest : MonoBehaviour
     float m_time;
     int m_num_active_tasks;
 
-    public Camera m_camera;
-
     void Awake()
     {
         m_renderer = GetComponent<BatchRenderer>();
@@ -56,8 +54,6 @@ public class BatchRendererTest : MonoBehaviour
 
     void Update()
     {
-        CameraControl();
-
         m_num_draw = Mathf.Min(m_num_draw, m_instance_t.Length);
         m_time = Time.realtimeSinceStartup;
         int num = m_num_draw;
@@ -78,28 +74,6 @@ public class BatchRendererTest : MonoBehaviour
             UpdateTask(new Range { begin = 0, end = num });
         }
         m_renderer.Flush();
-    }
-
-
-    void CameraControl()
-    {
-        Camera cam = m_camera;
-        if (cam == null) return;
-
-        Vector3 pos = cam.transform.position;
-        if (Input.GetMouseButton(0))
-        {
-            float ry = Input.GetAxis("Mouse X") * 3.0f;
-            float rxz = Input.GetAxis("Mouse Y") * 0.25f;
-            pos = Quaternion.Euler(0.0f, ry, 0) * pos;
-            pos.y += rxz;
-        }
-        {
-            float wheel = Input.GetAxis("Mouse ScrollWheel");
-            pos += pos.normalized * wheel * 4.0f;
-        }
-        cam.transform.position = pos;
-        cam.transform.LookAt(new Vector3(0.0f, -2.0f, 0.0f));
     }
 
     void UpdateTask(System.Object arg)

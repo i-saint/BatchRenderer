@@ -9,7 +9,7 @@ void ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 normal
 
     float3 camera_pos = _WorldSpaceCameraPos.xyz;
     float3 pos = GetInstanceTranslation(instance_id);
-    float3 look = normalize(camera_pos-pos);
+    float3 look = normalize(pos-camera_pos);
     float3 axis = cross(look, float3(0.0, 1.0, 0.0));
     float3 up = mul(axis_rotation_matrix33(axis, 90.0), look);
 
@@ -104,6 +104,8 @@ void ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout floa
 
 
 
+#ifndef WITHOUT_COMMON_VERT_FRAG
+
 sampler2D _MainTex;
 
 struct appdata_t {
@@ -148,3 +150,4 @@ float4 frag(v2f i) : SV_Target
     float4 color = tex2D(_MainTex, i.texcoord) * i.color;
     return color;
 }
+#endif // WITHOUT_COMMON_VERT_FRAG

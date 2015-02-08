@@ -54,10 +54,10 @@ public abstract class BatchRendererBase : MonoBehaviour
         }
         UpdateGPUResources();
 
-        Matrix4x4 identity = Matrix4x4.identity;
+        Matrix4x4 matrix = Matrix4x4.identity;
         for (int i = 0; i < m_batch_count; ++i)
         {
-            Graphics.DrawMesh(m_expanded_mesh, identity, m_materials[i], m_layer, m_camera, 0, null, m_cast_shadow, m_receive_shadow);
+            Graphics.DrawMesh(m_expanded_mesh, matrix, m_materials[i], m_layer, m_camera, 0, null, m_cast_shadow, m_receive_shadow);
         }
         m_instance_count = m_batch_count = 0;
     }
