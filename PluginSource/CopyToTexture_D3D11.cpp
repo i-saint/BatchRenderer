@@ -39,7 +39,7 @@ CopyToTextureD3D11::~CopyToTextureD3D11()
 void CopyToTextureD3D11::copy(void *texptr, int width, int height, const void *dataptr, int data_num, DataConversion conv)
 {
     ID3D11Texture2D *tex = (ID3D11Texture2D*)texptr;
-    dataptr = getDataPointer(dataptr, data_num, width*height, conv);
+    dataptr = getDataPointer(dataptr, data_num, width*height, conv, true);
 
     D3D11_BOX box;
     box.left = 0;

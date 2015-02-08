@@ -80,43 +80,59 @@ int CopyToTextureBase::getDataSize(int data_num, DataConversion conv)
     return 0;
 }
 
-const void* CopyToTextureBase::getDataPointer(const void *data, int data_num, int reserve_size, DataConversion conv)
+const void* CopyToTextureBase::getDataPointer(const void *data, int data_num, int reserve_size, DataConversion conv, bool float2half_conversion)
 {
-    if (conv == Float4ToFloat4) {
-        return data;
-    }
-    else if (conv == Float3ToFloat4) {
-        m_bufferf.resize(reserve_size);
-        const float3 *src = (const float3*)data;
-        for (int i = 0; i < data_num; ++i) {
-            (float3&)m_bufferf[i] = src[i];
-            m_bufferf[i][3] = 1.0f;
+    if (float2half_conversion) {
+        if (conv == Float4ToFloat4) {
+            return data;
         }
-        return &m_bufferf[0];
-    }
-    else if (conv == Float4ToHalf4) {
-        m_bufferh.resize(reserve_size);
-        const float4 *src = (const float4*)data;
-        for (int i = 0; i < data_num; ++i) {
-            (FP16&)m_bufferh[i][0] = float_to_half_fast3((const FP32&)src[i][0]);
-            (FP16&)m_bufferh[i][1] = float_to_half_fast3((const FP32&)src[i][1]);
-            (FP16&)m_bufferh[i][2] = float_to_half_fast3((const FP32&)src[i][2]);
-            (FP16&)m_bufferh[i][3] = float_to_half_fast3((const FP32&)src[i][3]);
+        else if (conv == Float3ToFloat4) {
+            m_bufferf.resize(reserve_size);
+            const float3 *src = (const float3*)data;
+            for (int i = 0; i < data_num; ++i) {
+                (float3&)m_bufferf[i] = src[i];
+                m_bufferf[i][3] = 1.0f;
+            }
+            return &m_bufferf[0];
         }
-        return &m_bufferh[0];
-    }
-    else if (conv == Float3ToHalf4) {
-        float onef = 1.0f;
-        FP16 oneh = float_to_half_fast3((const FP32&)onef);
-        m_bufferh.resize(reserve_size);
-        const float3 *src = (const float3*)data;
-        for (int i = 0; i < data_num; ++i) {
-            (FP16&)m_bufferh[i][0] = float_to_half_fast3((const FP32&)src[i][0]);
-            (FP16&)m_bufferh[i][1] = float_to_half_fast3((const FP32&)src[i][1]);
-            (FP16&)m_bufferh[i][2] = float_to_half_fast3((const FP32&)src[i][2]);
-            (FP16&)m_bufferh[i][3] = oneh;
+        else if (conv == Float4ToHalf4) {
+            m_bufferh.resize(reserve_size);
+            const float4 *src = (const float4*)data;
+            for (int i = 0; i < data_num; ++i) {
+                (FP16&)m_bufferh[i][0] = float_to_half_fast3((const FP32&)src[i][0]);
+                (FP16&)m_bufferh[i][1] = float_to_half_fast3((const FP32&)src[i][1]);
+                (FP16&)m_bufferh[i][2] = float_to_half_fast3((const FP32&)src[i][2]);
+                (FP16&)m_bufferh[i][3] = float_to_half_fast3((const FP32&)src[i][3]);
+            }
+            return &m_bufferh[0];
         }
-        return &m_bufferh[0];
+        else if (conv == Float3ToHalf4) {
+            float onef = 1.0f;
+            FP16 oneh = float_to_half_fast3((const FP32&)onef);
+            m_bufferh.resize(reserve_size);
+            const float3 *src = (const float3*)data;
+            for (int i = 0; i < data_num; ++i) {
+                (FP16&)m_bufferh[i][0] = float_to_half_fast3((const FP32&)src[i][0]);
+                (FP16&)m_bufferh[i][1] = float_to_half_fast3((const FP32&)src[i][1]);
+                (FP16&)m_bufferh[i][2] = float_to_half_fast3((const FP32&)src[i][2]);
+                (FP16&)m_bufferh[i][3] = oneh;
+            }
+            return &m_bufferh[0];
+        }
+    }
+    else {
+        if (conv == Float4ToFloat4 || conv == Float4ToHalf4) {
+            return data;
+        }
+        else if (conv == Float3ToFloat4 || conv == Float3ToHalf4) {
+            m_bufferf.resize(reserve_size);
+            const float3 *src = (const float3*)data;
+            for (int i = 0; i < data_num; ++i) {
+                (float3&)m_bufferf[i] = src[i];
+                m_bufferf[i][3] = 1.0f;
+            }
+            return &m_bufferf[0];
+        }
     }
     return nullptr;
 }
