@@ -42,6 +42,7 @@ void ApplyInstanceTransform(float2 id, inout float4 vertex, inout float3 normal,
 #endif
 }
 
+
 #ifndef WITHOUT_COMMON_VERT_SURF
 sampler2D _MainTex;
 sampler2D _NormalMap;

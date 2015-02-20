@@ -107,6 +107,7 @@ void ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout floa
 #ifndef WITHOUT_COMMON_VERT_FRAG
 
 sampler2D _MainTex;
+float4 g_base_color;
 
 struct appdata_t {
     float4 vertex : POSITION;
@@ -123,7 +124,7 @@ struct v2f {
 
 v2f vert(appdata_t v)
 {
-    float4 color = 1.0;
+    float4 color = g_base_color;
     ApplyBillboardTransform(v.texcoord1, v.vertex, v.normal, v.texcoord, color);
 
     v2f o;
@@ -135,7 +136,7 @@ v2f vert(appdata_t v)
 
 v2f vert_fixed(appdata_t v)
 {
-    float4 color = 1.0;
+    float4 color = g_base_color;
     ApplyViewPlaneBillboardTransform(v.texcoord1, v.vertex, v.normal, v.texcoord, color);
 
     v2f o;

@@ -1,4 +1,4 @@
-﻿Shader "BatchRenderer/FixedBillboard Add" {
+﻿Shader "BatchRenderer/Transparent Add" {
 Properties {
     _MainTex ("Texture", 2D) = "white" {}
     g_base_color ("Base Color", Color) = (1,1,1,1)
@@ -9,7 +9,7 @@ Category {
     Blend SrcAlpha One
     AlphaTest Greater .01
     ColorMask RGB
-    Cull Off Lighting Off ZWrite Off ZTest Always Fog { Color (0,0,0,0) }
+    Cull Off Lighting Off ZWrite Off Fog { Color (0,0,0,0) }
     
     SubShader {
         Pass {
@@ -20,12 +20,12 @@ CGPROGRAM
     #define WITHOUT_INSTANCE_COLOR
     #pragma target 3.0
 #endif
-#pragma vertex vert_fixed
+#pragma vertex vert
 #pragma fragment frag
 
 #include "UnityCG.cginc"
 #include "BatchRenderer.cginc"
-#include "Billboard.cginc"
+#include "Transparent.cginc"
 ENDCG
         }
     }

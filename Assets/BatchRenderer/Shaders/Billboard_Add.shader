@@ -1,6 +1,7 @@
 ﻿Shader "BatchRenderer/Billboard Add" {
 Properties {
     _MainTex ("Texture", 2D) = "white" {}
+    g_base_color ("Base Color", Color) = (1,1,1,1)
 }
 
 Category {
