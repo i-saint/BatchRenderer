@@ -12,9 +12,9 @@ CGPROGRAM
 #if defined(SHADER_API_OPENGL)
     #pragma glsl
 #elif defined(SHADER_API_D3D9)
+    #pragma target 3.0
     #define WITHOUT_INSTANCE_COLOR
     #define WITHOUT_INSTANCE_EMISSION
-    #pragma target 3.0
 #endif
 #pragma surface surf Lambert vertex:vert
 #include "UnityCG.cginc"

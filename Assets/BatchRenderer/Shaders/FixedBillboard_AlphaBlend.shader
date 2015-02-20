@@ -18,6 +18,8 @@ CGPROGRAM
 #elif defined(SHADER_API_D3D9)
     #define WITHOUT_INSTANCE_COLOR
     #pragma target 3.0
+    #define WITHOUT_INSTANCE_COLOR
+    #define WITHOUT_INSTANCE_EMISSION
 #endif
 #pragma vertex vert_fixed
 #pragma fragment frag

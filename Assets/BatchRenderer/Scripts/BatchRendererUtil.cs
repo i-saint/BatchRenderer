@@ -251,6 +251,31 @@ public static class BatchRendererUtil
         return ret;
     }
 
+
+    // なんか WebGL だと POINT が表示されないので LINE 代用版
+    public static Mesh CreateDataTransferMesh_Line(int num_vertices)
+    {
+        int n = Mathf.Min(num_vertices, max_vertices);
+        Vector3[] vertices = new Vector3[n];
+        Vector2[] uv = new Vector2[n];
+        int[] indices = new int[n*2];
+        for (int i = 0; i < n; ++i)
+        {
+            uv[i].x = i;
+            uv[i].y = 1.0f;
+            indices[i * 2 + 0] = i;
+            indices[i * 2 + 1] = i + 128 >= n ? i : i + 128;
+        }
+
+        Mesh ret = new Mesh();
+        ret.MarkDynamic();
+        ret.vertices = vertices;
+        ret.uv = uv;
+        //ret.SetIndices(indices, MeshTopology.Points, 0);
+        ret.SetIndices(indices, MeshTopology.Lines, 0);
+        return ret;
+    }
+
     public static int ceildiv(int v, int d)
     {
         return v/d + (v%d==0 ? 0 : 1);
