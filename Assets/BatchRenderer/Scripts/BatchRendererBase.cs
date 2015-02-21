@@ -45,7 +45,7 @@ public abstract class BatchRendererBase : MonoBehaviour
 
         m_expanded_mesh.bounds = new Bounds(m_trans.position, m_trans.localScale);
         m_instance_count = Mathf.Min(m_instance_count, m_max_instances);
-        m_batch_count = BatchRendererUtil.ceildiv(m_max_instances, m_instances_par_batch);
+        m_batch_count = BatchRendererUtil.ceildiv(m_instance_count, m_instances_par_batch);
 
         while (m_materials.Count < m_batch_count)
         {
