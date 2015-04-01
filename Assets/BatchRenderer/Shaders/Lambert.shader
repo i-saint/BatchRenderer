@@ -15,6 +15,8 @@ CGPROGRAM
     #pragma target 3.0
     #define WITHOUT_INSTANCE_COLOR
     #define WITHOUT_INSTANCE_EMISSION
+#else
+    #pragma target 4.0
 #endif
 #pragma surface surf Lambert vertex:vert
 #include "UnityCG.cginc"
