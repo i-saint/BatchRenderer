@@ -17,16 +17,15 @@ CGPROGRAM
 #if defined(SHADER_API_OPENGL)
     #pragma glsl
 #elif defined(SHADER_API_D3D9)
-    #define WITHOUT_INSTANCE_COLOR
+    #define BR_WITHOUT_INSTANCE_COLOR
     #pragma target 3.0
-    #define WITHOUT_INSTANCE_COLOR
-    #define WITHOUT_INSTANCE_EMISSION
+    #define BR_WITHOUT_INSTANCE_COLOR
+    #define BR_WITHOUT_INSTANCE_EMISSION
 #endif
-#pragma vertex vert_fixed
+#pragma vertex vert
 #pragma fragment frag
 
-#include "UnityCG.cginc"
-#include "BatchRenderer.cginc"
+#define BR_FIXED_BILLBOARD
 #include "Billboard.cginc"
 ENDCG
         }

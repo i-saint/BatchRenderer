@@ -17,16 +17,16 @@ CGPROGRAM
     #pragma glsl
 #elif defined(SHADER_API_D3D9)
     #pragma target 3.0
-    #define WITHOUT_INSTANCE_COLOR
-    #define WITHOUT_INSTANCE_EMISSION
+    #define BR_WITHOUT_INSTANCE_COLOR
+    #define BR_WITHOUT_INSTANCE_EMISSION
 #endif
 #pragma vertex vert
 #pragma fragment frag
 #pragma multi_compile_shadowcaster
 #include "UnityCG.cginc"
-#include "BatchRenderer.cginc"
+#include "Assets/BatchRenderer/Shaders/BatchRenderer.cginc"
 #define WITHOUT_COMMON_VERT_SURF
-#include "Surface.cginc"
+#include "Assets/BatchRenderer/Shaders/Surface.cginc"
 
 struct appdata {
     float4 vertex : POSITION;
@@ -71,8 +71,8 @@ CGPROGRAM
     #pragma glsl
 #elif defined(SHADER_API_D3D9)
     #pragma target 3.0
-    #define WITHOUT_INSTANCE_COLOR
-    #define WITHOUT_INSTANCE_EMISSION
+    #define BR_WITHOUT_INSTANCE_COLOR
+    #define BR_WITHOUT_INSTANCE_EMISSION
 #endif
 #pragma vertex vert
 #pragma fragment frag

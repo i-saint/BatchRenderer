@@ -9,7 +9,7 @@ Category {
     Blend SrcAlpha One
     AlphaTest Greater .01
     ColorMask RGB
-    Cull Off Lighting Off ZWrite Off ZTest Always Fog { Color (0,0,0,0) }
+    Cull Off Lighting Off ZWrite Off ZTest Less Fog { Color (0,0,0,0) }
     
     SubShader {
         Pass {
@@ -17,14 +17,13 @@ CGPROGRAM
 #if defined(SHADER_API_OPENGL)
     #pragma glsl
 #elif defined(SHADER_API_D3D9)
-    #define WITHOUT_INSTANCE_COLOR
+    #define BR_WITHOUT_INSTANCE_COLOR
     #pragma target 3.0
 #endif
-#pragma vertex vert_fixed
+#pragma vertex vert
 #pragma fragment frag
 
-#include "UnityCG.cginc"
-#include "BatchRenderer.cginc"
+#define BR_FIXED_BILLBOARD
 #include "Billboard.cginc"
 ENDCG
         }

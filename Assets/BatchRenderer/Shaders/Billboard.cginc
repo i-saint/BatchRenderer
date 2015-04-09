@@ -1,3 +1,9 @@
+#ifndef BRBillboard_h
+#define BRBillboard_h
+
+#include "UnityCG.cginc"
+#include "Assets/BatchRenderer/Shaders/BatchRenderer.cginc"
+
 
 void ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 normal, inout float2 texcoord, inout float4 color)
 {
@@ -14,13 +20,13 @@ void ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 normal
     float3 up = mul(axis_rotation_matrix33(axis, 90.0), look);
 
     vertex.xyz *= GetBaseScale();
-#ifndef WITHOUT_INSTANCE_SCALE
+#ifndef BR_WITHOUT_INSTANCE_SCALE
     if(GetFlag_Scale()) {
         vertex.xyz *= GetInstanceScale(instance_id);
     }
 #endif
     vertex.xyz = mul(look_matrix33(look, up), vertex.xyz);
-#ifndef WITHOUT_INSTANCE_ROTATION
+#ifndef BR_WITHOUT_INSTANCE_ROTATION
     if(GetFlag_Rotation()) {
         float3x3 rot = quaternion_to_matrix33(GetInstanceRotation(instance_id));
         vertex.xyz = mul(rot, vertex.xyz);
@@ -30,13 +36,13 @@ void ApplyBillboardTransform(float2 id, inout float4 vertex, inout float3 normal
     vertex.xyz += pos;
     vertex = mul(UNITY_MATRIX_VP, vertex);
 
-#ifndef WITHOUT_INSTANCE_UVOFFSET
+#ifndef BR_WITHOUT_INSTANCE_UVOFFSET
     if(GetFlag_UVOffset()) {
         float4 u = GetInstanceUVOffset(instance_id);
         texcoord = texcoord*u.xy + u.zw;
     }
 #endif
-#ifndef WITHOUT_INSTANCE_COLOR
+#ifndef BR_WITHOUT_INSTANCE_COLOR
     if(GetFlag_Color()) {
         color *= GetInstanceColor(instance_id);
     }
@@ -56,7 +62,7 @@ bool ApplyViewPlaneProjection(inout float4 vertex, float3 pos)
     float3 camera_pos = _WorldSpaceCameraPos.xyz;
     float3 look = normalize(camera_pos-pos);
     Plane view_plane = {look, 1.0};
-    pos = camera_pos + project_to_plane(view_plane, pos-camera_pos);
+    pos = camera_pos + ProjectToPlane(view_plane, pos-camera_pos);
     vertex.y *= -aspect;
     vertex.xy += vp.xy / vp.w;
     vertex.zw = float2(0.0, 1.0);
@@ -73,12 +79,12 @@ void ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout floa
 
     float3 pos = GetInstanceTranslation(instance_id);
     vertex.xyz *= GetBaseScale();
-#ifndef WITHOUT_INSTANCE_SCALE
+#ifndef BR_WITHOUT_INSTANCE_SCALE
     if(GetFlag_Scale()) {
         vertex.xyz *= GetInstanceScale(instance_id);
     }
 #endif
-#ifndef WITHOUT_INSTANCE_ROTATION
+#ifndef BR_WITHOUT_INSTANCE_ROTATION
     if(GetFlag_Rotation()) {
         float3x3 rot = quaternion_to_matrix33(GetInstanceRotation(instance_id));
         vertex.xyz = mul(rot, vertex.xyz);
@@ -89,13 +95,13 @@ void ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout floa
         return;
     }
 
-#ifndef WITHOUT_INSTANCE_UVOFFSET
+#ifndef BR_WITHOUT_INSTANCE_UVOFFSET
     if(GetFlag_UVOffset()) {
         float4 u = GetInstanceUVOffset(instance_id);
         texcoord = texcoord*u.xy + u.zw;
     }
 #endif
-#ifndef WITHOUT_INSTANCE_COLOR
+#ifndef BR_WITHOUT_INSTANCE_COLOR
     if(GetFlag_Color()) {
         color *= GetInstanceColor(instance_id);
     }
@@ -104,51 +110,60 @@ void ApplyViewPlaneBillboardTransform(float2 id, inout float4 vertex, inout floa
 
 
 
-#ifndef WITHOUT_COMMON_VERT_FRAG
+#if defined(BR_BILLBOARD) || defined(BR_FIXED_BILLBOARD)
+    sampler2D _MainTex;
+    float4 g_base_color;
 
-sampler2D _MainTex;
-float4 g_base_color;
+    struct appdata_t {
+        float4 vertex : POSITION;
+        float3 normal : NORMAL;
+        float2 texcoord : TEXCOORD0;
+        float2 texcoord1 : TEXCOORD1;
+    };
 
-struct appdata_t {
-    float4 vertex : POSITION;
-    float3 normal : NORMAL;
-    float2 texcoord : TEXCOORD0;
-    float2 texcoord1 : TEXCOORD1;
-};
+    struct v2f {
+        float4 vertex : SV_POSITION;
+        float2 texcoord : TEXCOORD0;
+        float4 color : TEXCOORD1;
+    };
 
-struct v2f {
-    float4 vertex : SV_POSITION;
-    float2 texcoord : TEXCOORD0;
-    float4 color : TEXCOORD1;
-};
+    float4 frag(v2f i) : SV_Target
+    {
+        float4 color = tex2D(_MainTex, i.texcoord) * i.color;
+        return color;
+    }
+#endif // 
 
-v2f vert(appdata_t v)
-{
-    float4 color = g_base_color;
-    ApplyBillboardTransform(v.texcoord1, v.vertex, v.normal, v.texcoord, color);
 
-    v2f o;
-    o.vertex = v.vertex;
-    o.texcoord = v.texcoord;
-    o.color = color;
-    return o;
-}
+#ifdef BR_BILLBOARD
+    v2f vert(appdata_t v)
+    {
+        float4 color = g_base_color;
+        ApplyBillboardTransform(v.texcoord1, v.vertex, v.normal, v.texcoord, color);
 
-v2f vert_fixed(appdata_t v)
-{
-    float4 color = g_base_color;
-    ApplyViewPlaneBillboardTransform(v.texcoord1, v.vertex, v.normal, v.texcoord, color);
+        v2f o;
+        o.vertex = v.vertex;
+        o.texcoord = v.texcoord;
+        o.color = color;
+        return o;
+    }
+#endif // BR_BILLBOARD
 
-    v2f o;
-    o.vertex = v.vertex;
-    o.texcoord = v.texcoord;
-    o.color = color;
-    return o;
-}
 
-float4 frag(v2f i) : SV_Target
-{
-    float4 color = tex2D(_MainTex, i.texcoord) * i.color;
-    return color;
-}
-#endif // WITHOUT_COMMON_VERT_FRAG
+
+#ifdef BR_FIXED_BILLBOARD
+    v2f vert(appdata_t v)
+    {
+        float4 color = g_base_color;
+        ApplyViewPlaneBillboardTransform(v.texcoord1, v.vertex, v.normal, v.texcoord, color);
+
+        v2f o;
+        o.vertex = v.vertex;
+        o.texcoord = v.texcoord;
+        o.color = color;
+        return o;
+    }
+#endif // BR_FIXED_BILLBOARD
+
+
+#endif // BRBillboard_h

@@ -16,6 +16,7 @@ public abstract class BatchRendererBase : MonoBehaviour
     public Vector3 m_scale = Vector3.one;
     public Camera m_camera;
     public bool m_flush_on_LateUpdate = true;
+    public Vector3 m_bounds_size = Vector3.one;
 
     protected int m_instances_par_batch;
     protected int m_instance_count;
@@ -37,13 +38,15 @@ public abstract class BatchRendererBase : MonoBehaviour
 
     public virtual void Flush()
     {
-        if (m_mesh == null || m_instance_count==0)
+        if (m_expanded_mesh == null || m_instance_count == 0)
         {
             m_instance_count = 0;
             return;
         }
 
-        m_expanded_mesh.bounds = new Bounds(m_trans.position, m_trans.localScale);
+        Vector3 scale = m_trans.localScale;
+        m_expanded_mesh.bounds = new Bounds(m_trans.position,
+            new Vector3(m_bounds_size.x * scale.x, m_bounds_size.y * scale.y, m_bounds_size.y * scale.y));
         m_instance_count = Mathf.Min(m_instance_count, m_max_instances);
         m_batch_count = BatchRendererUtil.ceildiv(m_instance_count, m_instances_par_batch);
 
@@ -64,16 +67,16 @@ public abstract class BatchRendererBase : MonoBehaviour
 
 
 
-
     public virtual void OnEnable()
     {
-        if (m_mesh == null) return;
-
         m_trans = GetComponent<Transform>();
         m_materials = new List<Material>();
 
-        m_expanded_mesh = BatchRendererUtil.CreateExpandedMesh(m_mesh, out m_instances_par_batch);
-        m_expanded_mesh.UploadMeshData(true);
+        if (m_expanded_mesh == null && m_mesh != null)
+        {
+            m_expanded_mesh = BatchRendererUtil.CreateExpandedMesh(m_mesh, out m_instances_par_batch);
+            m_expanded_mesh.UploadMeshData(true);
+        }
 
         int layer_mask = m_layer_selector.value;
         for (int i = 0; i < 32; ++i )
@@ -102,7 +105,10 @@ public abstract class BatchRendererBase : MonoBehaviour
 
     public virtual void OnDrawGizmos()
     {
+        Transform t = GetComponent<Transform>();
+        Vector3 s = t.localScale;
+
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireCube(transform.position, transform.localScale);
+        Gizmos.DrawWireCube(t.position, new Vector3(m_bounds_size.x * s.x, m_bounds_size.y * s.y, m_bounds_size.z * s.z));
     }
 }

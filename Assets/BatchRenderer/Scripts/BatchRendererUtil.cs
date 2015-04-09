@@ -231,6 +231,34 @@ public static class BatchRendererUtil
     }
 
 
+    public static Mesh CreateIndexOnlyMesh(int num_vertices, int[] indices_base, out int instances_par_batch)
+    {
+        int num_indices = indices_base.Length;
+        instances_par_batch = max_vertices / num_vertices;
+
+        Vector3[] vertices = new Vector3[num_vertices * instances_par_batch];
+        int[] indices = new int[num_indices * instances_par_batch];
+        for (int ii = 0; ii < instances_par_batch; ++ii)
+        {
+            for (int vi = 0; vi < num_vertices; ++vi)
+            {
+                int i = ii * num_vertices + vi;
+                vertices[i].x = vi;
+                vertices[i].y = ii;
+            }
+            for (int di = 0; di < num_indices; ++di)
+            {
+                int i = ii * num_indices + di;
+                indices[i] = ii * num_vertices + indices_base[di];
+            }
+        }
+
+        Mesh ret = new Mesh();
+        ret.vertices = vertices;
+        ret.triangles = indices;
+        return ret;
+    }
+
     public static Mesh CreateDataTransferMesh(int num_vertices)
     {
         int n = Mathf.Min(num_vertices, max_vertices);
@@ -250,7 +278,6 @@ public static class BatchRendererUtil
         ret.SetIndices(indices, MeshTopology.Points, 0);
         return ret;
     }
-
 
     // なんか WebGL だと POINT が表示されないので LINE 代用版
     public static Mesh CreateDataTransferMesh_Line(int num_vertices)
@@ -274,6 +301,44 @@ public static class BatchRendererUtil
         //ret.SetIndices(indices, MeshTopology.Points, 0);
         ret.SetIndices(indices, MeshTopology.Lines, 0);
         return ret;
+    }
+
+
+    public static void Swap<T>(ref T lhs, ref T rhs)
+    {
+        T temp;
+        temp = lhs;
+        lhs = rhs;
+        rhs = temp;
+    }
+
+    public struct VertexT
+    {
+        public const int size = 48;
+
+        public Vector3 vertex;
+        public Vector3 normal;
+        public Vector4 tangent;
+        public Vector2 texcoord;
+    }
+
+    public static void CreateVertexBuffer(Mesh mesh, ref ComputeBuffer ret, ref int num_vertices)
+    {
+        int[] indices = mesh.GetIndices(0);
+        Vector3[] vertices = mesh.vertices;
+        Vector3[] normals = mesh.normals;
+        Vector4[] tangents = mesh.tangents;
+        Vector2[] uv = mesh.uv;
+
+        VertexT[] v = new VertexT[indices.Length];
+        if (vertices != null) { for (int i = 0; i < indices.Length; ++i) { v[i].vertex = vertices[indices[i]]; } }
+        if (normals != null) { for (int i = 0; i < indices.Length; ++i) { v[i].normal = normals[indices[i]]; } }
+        if (tangents != null) { for (int i = 0; i < indices.Length; ++i) { v[i].tangent = tangents[indices[i]]; } }
+        if (uv != null) { for (int i = 0; i < indices.Length; ++i) { v[i].texcoord = uv[indices[i]]; } }
+
+        ret = new ComputeBuffer(indices.Length, VertexT.size);
+        ret.SetData(v);
+        num_vertices = v.Length;
     }
 
     public static int ceildiv(int v, int d)

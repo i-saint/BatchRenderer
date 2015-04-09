@@ -12,13 +12,15 @@ CGPROGRAM
 #if defined(SHADER_API_OPENGL)
     #pragma glsl
 #elif defined(SHADER_API_D3D9)
-    #define WITHOUT_INSTANCE_COLOR
-    #define WITHOUT_INSTANCE_EMISSION
     #pragma target 3.0
+    #define BR_WITHOUT_INSTANCE_COLOR
+    #define BR_WITHOUT_INSTANCE_EMISSION
+#else
+    #pragma target 4.0
 #endif
 #pragma surface surf BlinnPhong vertex:vert
-#include "UnityCG.cginc"
-#include "BatchRenderer.cginc"
+
+#define BR_SURFACE
 #include "Surface.cginc"
 ENDCG
 }

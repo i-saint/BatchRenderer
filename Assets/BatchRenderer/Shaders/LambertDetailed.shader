@@ -16,13 +16,13 @@ CGPROGRAM
 #if defined(SHADER_API_OPENGL)
     #pragma glsl
 #elif defined(SHADER_API_D3D9)
-    #define WITHOUT_INSTANCE_COLOR
-    #define WITHOUT_INSTANCE_EMISSION
+    #define BR_WITHOUT_INSTANCE_COLOR
+    #define BR_WITHOUT_INSTANCE_EMISSION
     #pragma target 3.0
 #endif
-#pragma surface surf_detailed Lambert vertex:vert
-#include "UnityCG.cginc"
-#include "BatchRenderer.cginc"
+#pragma surface surf Lambert vertex:vert
+
+#define BR_SURFACE_DETAILED
 #include "Surface.cginc"
 ENDCG
 }

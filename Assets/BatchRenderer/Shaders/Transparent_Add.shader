@@ -17,14 +17,13 @@ CGPROGRAM
 #if defined(SHADER_API_OPENGL)
     #pragma glsl
 #elif defined(SHADER_API_D3D9)
-    #define WITHOUT_INSTANCE_COLOR
+    #define BR_WITHOUT_INSTANCE_COLOR
     #pragma target 3.0
 #endif
 #pragma vertex vert
 #pragma fragment frag
 
-#include "UnityCG.cginc"
-#include "BatchRenderer.cginc"
+#define BR_TRANSPARENT
 #include "Transparent.cginc"
 ENDCG
         }
