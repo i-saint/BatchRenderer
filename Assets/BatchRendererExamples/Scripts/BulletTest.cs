@@ -15,7 +15,7 @@ public class BulletTest : MonoBehaviour
     {
         if (m_bullets != null)
         {
-            GUI.Label(new Rect(5.0f, 5.0f, 105.0f, 20.0f), "bullets: " + m_bullets.m_num_active_entities);
+            GUI.Label(new Rect(5.0f, 25.0f, 105.0f, 20.0f), "bullets: " + m_bullets.m_num_active_entities);
         }
     }
 }
