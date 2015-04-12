@@ -57,9 +57,9 @@ public class CustumDataBatchRenderer<InstanceData> : BatchRendererBase
     public ComputeBuffer GetInstanceBuffer() { return m_instance_buffer; }
     public RenderTexture GetInstanceTexture() { return m_instance_texture; }
 
-    public override Material CloneMaterial(int nth)
+    public override Material CloneMaterial(Material src, int nth)
     {
-        Material m = new Material(m_material);
+        Material m = new Material(src);
         m.SetInt("g_batch_begin", nth * m_instances_par_batch);
 
         // fix rendering order for transparent objects
@@ -74,7 +74,7 @@ public class CustumDataBatchRenderer<InstanceData> : BatchRendererBase
     public virtual void ReleaseGPUResources()
     {
         m_instance_buffer.Release();
-        m_materials.Clear();
+        ClearMaterials();
     }
 
     public virtual void ResetGPUResoures()
@@ -89,7 +89,7 @@ public class CustumDataBatchRenderer<InstanceData> : BatchRendererBase
 
     public override void UpdateGPUResources()
     {
-        m_materials.ForEach((v) =>
+        ForEachEveryMaterials((v) =>
         {
             v.SetInt("g_num_max_instances", m_max_instances);
             v.SetInt("g_num_instances", m_instance_count);

@@ -303,7 +303,7 @@ public class BatchRenderer : BatchRendererBase
     {
         if (m_instance_buffer != null) { m_instance_buffer.Release(); }
         if (m_instance_texture != null) { m_instance_texture.Release(); }
-        m_materials.Clear();
+        ClearMaterials();
     }
 
     public void ResetGPUData()
@@ -330,9 +330,9 @@ public class BatchRenderer : BatchRendererBase
         UpdateGPUResources();
     }
 
-    public override Material CloneMaterial(int nth)
+    public override Material CloneMaterial(Material src, int nth)
     {
-        Material m = new Material(m_material);
+        Material m = new Material(src);
         m.SetInt("g_batch_begin", nth * m_instances_par_batch);
         m.SetInt("g_flag_rotation", m_enable_rotation ? 1 : 0);
         m.SetInt("g_flag_scale", m_enable_scale ? 1 : 0);
@@ -383,7 +383,7 @@ public class BatchRenderer : BatchRendererBase
                 UploadInstanceData_TextureWithPlugin();
                 break;
         }
-        m_materials.ForEach((v) =>
+        ForEachEveryMaterials((v) =>
         {
             v.SetInt("g_num_instances", m_instance_count);
             v.SetVector("g_scale", m_scale);

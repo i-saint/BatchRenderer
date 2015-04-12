@@ -9,8 +9,7 @@ Properties {
     _GrossMap ("Grossmap", 2D) = "black" {}
 }
 SubShader {
-    Tags { "RenderType"="BatchedOpaque" }
-    LOD 200
+    Tags { "RenderType"="Opaque" "Queue"="Geometry+1" }
 
 CGPROGRAM
 #if defined(SHADER_API_OPENGL)
@@ -20,12 +19,12 @@ CGPROGRAM
     #define BR_WITHOUT_INSTANCE_EMISSION
     #pragma target 3.0
 #endif
-#pragma surface surf_detailed BlinnPhong vertex:vert
+#pragma surface surf BlinnPhong vertex:vert addshadow
 
 #define BR_SURFACE_DETAILED
 #include "Surface.cginc"
 ENDCG
 }
 
-Fallback "BatchRenderer/BatchBase"
+Fallback Off
 }

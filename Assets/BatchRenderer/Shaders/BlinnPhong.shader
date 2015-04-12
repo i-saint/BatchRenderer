@@ -5,8 +5,7 @@ Properties {
     _MainTex ("Base (RGB)", 2D) = "white" {}
 }
 SubShader {
-    Tags { "RenderType"="BatchedOpaque" }
-    LOD 200
+    Tags { "RenderType"="Opaque" "Queue"="Geometry+1" }
 
 CGPROGRAM
 #if defined(SHADER_API_OPENGL)
@@ -18,12 +17,12 @@ CGPROGRAM
 #else
     #pragma target 4.0
 #endif
-#pragma surface surf BlinnPhong vertex:vert
+#pragma surface surf BlinnPhong vertex:vert addshadow
 
 #define BR_SURFACE
 #include "Surface.cginc"
 ENDCG
 }
 
-Fallback "BatchRenderer/BatchBase"
+Fallback Off
 }

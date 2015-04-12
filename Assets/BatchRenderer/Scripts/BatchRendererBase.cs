@@ -10,6 +10,7 @@ public abstract class BatchRendererBase : MonoBehaviour
     public int m_max_instances = 1024 * 4;
     public Mesh m_mesh;
     public Material m_material;
+    public Material[] m_materials;
     public LayerMask m_layer_selector = 1;
     public bool m_cast_shadow = false;
     public bool m_receive_shadow = false;
@@ -24,7 +25,7 @@ public abstract class BatchRendererBase : MonoBehaviour
     protected int m_layer;
     protected Transform m_trans;
     protected Mesh m_expanded_mesh;
-    protected List<Material> m_materials;
+    private List< List<Material> >m_actual_materials;
 
     public int GetMaxInstanceCount() { return m_max_instances; }
     public int GetInstanceCount() { return m_instance_count; }
@@ -32,8 +33,20 @@ public abstract class BatchRendererBase : MonoBehaviour
 
 
 
-    public abstract Material CloneMaterial(int nth);
+    public abstract Material CloneMaterial(Material src, int nth);
     public abstract void UpdateGPUResources();
+
+    public void ForEachEveryMaterials(System.Action<Material> a)
+    {
+        m_actual_materials.ForEach(
+            (ma) => { 
+                ma.ForEach(v => { a(v); });
+            });
+    }
+    protected void ClearMaterials()
+    {
+        m_actual_materials.ForEach(a => { a.Clear(); });
+    }
 
 
     public virtual void Flush()
@@ -50,18 +63,25 @@ public abstract class BatchRendererBase : MonoBehaviour
         m_instance_count = Mathf.Min(m_instance_count, m_max_instances);
         m_batch_count = BatchRendererUtil.ceildiv(m_instance_count, m_instances_par_batch);
 
-        while (m_materials.Count < m_batch_count)
+        for (int i = 0; i < m_actual_materials.Count; ++i )
         {
-            Material m = CloneMaterial(m_materials.Count);
-            m_materials.Add(m);
+            var a = m_actual_materials[i];
+            while (a.Count < m_batch_count)
+            {
+                Material m = CloneMaterial(m_materials[i], a.Count);
+                a.Add(m);
+            }
         }
         UpdateGPUResources();
 
         Matrix4x4 matrix = Matrix4x4.identity;
-        for (int i = 0; i < m_batch_count; ++i)
+        m_actual_materials.ForEach(a =>
         {
-            Graphics.DrawMesh(m_expanded_mesh, matrix, m_materials[i], m_layer, m_camera, 0, null, m_cast_shadow, m_receive_shadow);
-        }
+            for (int i = 0; i < m_batch_count; ++i)
+            {
+                Graphics.DrawMesh(m_expanded_mesh, matrix, a[i], m_layer, m_camera, 0, null, m_cast_shadow, m_receive_shadow);
+            }
+        });
         m_instance_count = m_batch_count = 0;
     }
 
@@ -70,7 +90,17 @@ public abstract class BatchRendererBase : MonoBehaviour
     public virtual void OnEnable()
     {
         m_trans = GetComponent<Transform>();
-        m_materials = new List<Material>();
+
+        if (m_materials==null || m_materials.Length==0)
+        {
+            m_materials = new Material[1] { m_material };
+        }
+
+        m_actual_materials = new List<List<Material>>();
+        while (m_actual_materials.Count < m_materials.Length)
+        {
+            m_actual_materials.Add(new List<Material>());
+        }
 
         if (m_expanded_mesh == null && m_mesh != null)
         {

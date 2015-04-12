@@ -6,9 +6,8 @@ Properties {
     _Metallic ("Metallic", Range(0,1)) = 0.0
 }
 SubShader {
-    Tags { "RenderType"="Opaque" }
-    LOD 200
-        
+    Tags { "RenderType"="Opaque" "Queue"="Geometry+1" }
+
 CGPROGRAM
 #if defined(SHADER_API_OPENGL)
     #pragma glsl
@@ -19,12 +18,12 @@ CGPROGRAM
 #else
     #pragma target 4.0
 #endif
-    #pragma surface surf Standard fullforwardshadows vertex:vert
+    #pragma surface surf Standard fullforwardshadows vertex:vert addshadow
 
 #define BR_STANDARD
 #include "Surface.cginc"
 
 ENDCG
 } 
-FallBack "Diffuse"
+FallBack Off
 }
