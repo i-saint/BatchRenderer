@@ -66,7 +66,6 @@ vs_out vert(ia_out v)
 
     ApplyInstanceTransform2(iid, pos, normal, tangent, texcoord, color, emission);
     float4 vp = mul(UNITY_MATRIX_VP, pos);
-    //float4 vp = pos;
 
     vs_out o;
     o.vertex = vp;
@@ -83,7 +82,7 @@ ps_out frag(vs_out v)
     ps_out r;
     r.diffuse = 0.5;
     r.spec_smoothness = 0.5;
-    r.normal = float4(v.normal, 0.0);
+    r.normal = float4(v.normal*0.5+0.5, 0.0);
     r.emission = 0.5;
     return r;
 }

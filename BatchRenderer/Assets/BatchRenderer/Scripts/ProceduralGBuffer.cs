@@ -280,7 +280,6 @@ public class ProceduralGBuffer : MonoBehaviour
             m_cb = new CommandBuffer();
             m_cb.name = "ProceduralGBuffer";
             m_cb.DrawProcedural(Matrix4x4.identity, m_material, 0, MeshTopology.Triangles, m_vertex_count, m_max_instances);
-            //m_camera.AddCommandBuffer(CameraEvent.BeforeImageEffects, m_cb);
             m_camera.AddCommandBuffer(CameraEvent.AfterGBuffer, m_cb);
         }
 
