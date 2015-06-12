@@ -19,6 +19,8 @@ CGPROGRAM
 #endif
 #pragma surface surf BlinnPhong vertex:vert addshadow
 
+#pragma multi_compile ___ USE_INSTANCE_BUFFER
+
 #define BR_SURFACE
 #include "Surface.cginc"
 ENDCG

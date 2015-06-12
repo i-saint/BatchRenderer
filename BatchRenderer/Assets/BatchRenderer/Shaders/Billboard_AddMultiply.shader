@@ -22,6 +22,8 @@ CGPROGRAM
 #pragma vertex vert
 #pragma fragment frag
 
+#pragma multi_compile ___ USE_INSTANCE_BUFFER
+
 #define BR_BILLBOARD
 #include "Billboard.cginc"
 ENDCG

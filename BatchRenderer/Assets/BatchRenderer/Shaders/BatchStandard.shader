@@ -20,6 +20,8 @@ CGPROGRAM
 #endif
     #pragma surface surf Standard fullforwardshadows vertex:vert addshadow
 
+#pragma multi_compile ___ USE_INSTANCE_BUFFER
+
 #define BR_STANDARD
 #include "Surface.cginc"
 

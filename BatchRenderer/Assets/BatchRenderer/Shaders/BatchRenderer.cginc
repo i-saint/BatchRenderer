@@ -4,11 +4,6 @@
 #include "Assets/BatchRenderer/Shaders/Math.cginc"
 #include "Assets/BatchRenderer/Shaders/Geometry.cginc"
 
-//// flag to always use StructuredBuffer as instance data source
-//#define ALWAYS_USE_BUFFER_DATA_SOURCE
-
-//// flag to always use Texture as instance data source
-//#define ALWAYS_USE_TEXTURE_DATA_SOURCE
 
 
 #ifdef SHADER_API_PSSL
@@ -24,9 +19,6 @@
     #define WITH_STRUCTURED_BUFFER
 #endif
 
-#define WITH_COLOR_PARAMETERS
-
-
 
 
 int     g_num_instances;
@@ -37,7 +29,6 @@ int     g_flag_scale;
 int     g_flag_color;
 int     g_flag_emission;
 int     g_flag_uvoffset;
-int     g_flag_use_buffer;
 int     g_batch_begin;
 
 int     GetNumInstances()       { return g_num_instances; }
@@ -50,7 +41,6 @@ bool    GetFlag_Scale()     { return g_flag_scale!=0; }
 bool    GetFlag_Color()     { return g_flag_color!=0; }
 bool    GetFlag_Emission()  { return g_flag_emission!=0; }
 bool    GetFlag_UVOffset()  { return g_flag_uvoffset!=0; }
-bool    GetFlag_UseBuffer() { return g_flag_use_buffer!=0; }
 
 sampler2D g_instance_texture_t;
 sampler2D g_instance_texture_r;
@@ -66,7 +56,6 @@ float3  GetInstanceScaleT(int i)        { return tex2Dlod(g_instance_texture_s, 
 float4  GetInstanceColorT(int i)        { return tex2Dlod(g_instance_texture_color, InstanceTexcoord(i));    }
 float4  GetInstanceEmissionT(int i)     { return tex2Dlod(g_instance_texture_emission, InstanceTexcoord(i)); }
 float4  GetInstanceUVOffsetT(int i)     { return tex2Dlod(g_instance_texture_uv, InstanceTexcoord(i));       }
-
 
 #ifdef WITH_STRUCTURED_BUFFER
 
@@ -88,23 +77,16 @@ float4  GetInstanceUVOffsetB(int i)      { return g_instance_buffer_uv[i];      
 
 
 
-#ifdef WITH_STRUCTURED_BUFFER
-#ifdef ALWAYS_USE_BUFFER_DATA_SOURCE
+#if defined(WITH_STRUCTURED_BUFFER) && defined(USE_INSTANCE_BUFFER)
+
 float3  GetInstanceTranslation(int i)   { return GetInstanceTranslationB(i); }
 float4  GetInstanceRotation(int i)      { return GetInstanceRotationB(i);    }
 float3  GetInstanceScale(int i)         { return GetInstanceScaleB(i);       }
 float4  GetInstanceColor(int i)         { return GetInstanceColorB(i);       }
 float4  GetInstanceEmission(int i)      { return GetInstanceEmissionB(i);    }
 float4  GetInstanceUVOffset(int i)      { return GetInstanceUVOffsetB(i);    }
-#else  // ALWAYS_USE_BUFFER_DATA_SOURCE
-float3  GetInstanceTranslation(int i)   { return (GetFlag_UseBuffer()) ? GetInstanceTranslationB(i) : GetInstanceTranslationT(i); }
-float4  GetInstanceRotation(int i)      { return (GetFlag_UseBuffer()) ? GetInstanceRotationB(i)    : GetInstanceRotationT(i);    }
-float3  GetInstanceScale(int i)         { return (GetFlag_UseBuffer()) ? GetInstanceScaleB(i)       : GetInstanceScaleT(i);       }
-float4  GetInstanceColor(int i)         { return (GetFlag_UseBuffer()) ? GetInstanceColorB(i)       : GetInstanceColorT(i);       }
-float4  GetInstanceEmission(int i)      { return (GetFlag_UseBuffer()) ? GetInstanceEmissionB(i)    : GetInstanceEmissionT(i);    }
-float4  GetInstanceUVOffset(int i)      { return (GetFlag_UseBuffer()) ? GetInstanceUVOffsetB(i)    : GetInstanceUVOffsetT(i);    }
-#endif // ALWAYS_USE_BUFFER_DATA_SOURCE
-#else  // WITH_STRUCTURED_BUFFER
+
+#else
 
 float3  GetInstanceTranslation(int i)   { return GetInstanceTranslationT(i); }
 float4  GetInstanceRotation(int i)      { return GetInstanceRotationT(i);    }
@@ -113,6 +95,6 @@ float4  GetInstanceColor(int i)         { return GetInstanceColorT(i);       }
 float4  GetInstanceEmission(int i)      { return GetInstanceEmissionT(i);    }
 float4  GetInstanceUVOffset(int i)      { return GetInstanceUVOffsetT(i);    }
 
-#endif // WITH_STRUCTURED_BUFFER
+#endif
 
 #endif // BatchRenderer_h

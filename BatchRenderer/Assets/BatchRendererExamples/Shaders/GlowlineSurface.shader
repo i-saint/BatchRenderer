@@ -17,6 +17,9 @@ CGPROGRAM
     #define WITHOUT_INSTANCE_EMISSION
 #endif
     #pragma target 4.0
+
+#pragma multi_compile ___ USE_INSTANCE_BUFFER
+
 #pragma enable_d3d11_debug_symbols
 #pragma surface surf BlinnPhong vertex:vert
 #include "UnityCG.cginc"

@@ -21,6 +21,8 @@ CGPROGRAM
 #endif
 #pragma surface surf Lambert vertex:vert addshadow
 
+#pragma multi_compile ___ USE_INSTANCE_BUFFER
+
 #define BR_SURFACE_DETAILED
 #include "Surface.cginc"
 ENDCG

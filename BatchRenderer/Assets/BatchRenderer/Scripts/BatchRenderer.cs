@@ -333,13 +333,16 @@ public class BatchRenderer : BatchRendererBase
     public override Material CloneMaterial(Material src, int nth)
     {
         Material m = new Material(src);
+        if (m_data_transfer_mode == DataTransferMode.Buffer)
+        {
+            m.EnableKeyword("USE_INSTANCE_BUFFER");
+        }
         m.SetInt("g_batch_begin", nth * m_instances_par_batch);
         m.SetInt("g_flag_rotation", m_enable_rotation ? 1 : 0);
         m.SetInt("g_flag_scale", m_enable_scale ? 1 : 0);
         m.SetInt("g_flag_color", m_enable_color ? 1 : 0);
         m.SetInt("g_flag_emission", m_enable_emission ? 1 : 0);
         m.SetInt("g_flag_uvoffset", m_enable_uv_offset ? 1 : 0);
-        m.SetInt("g_flag_use_buffer", m_data_transfer_mode==DataTransferMode.Buffer ? 1 : 0);
         m.SetVector("g_texel_size", m_instance_texel_size);
 
         if (m_instance_buffer != null)
