@@ -4,6 +4,9 @@ Properties {
     _MainTex ("Albedo (RGB)", 2D) = "white" {}
     _Glossiness ("Smoothness", Range(0,1)) = 0.5
     _Metallic ("Metallic", Range(0,1)) = 0.0
+    _EmissionMap ("Emission Map", 2D) = "white" {}
+    _Emission ("Color", Color) = (1,1,1,1)
+    _Offset ("Offset", Vector) = (0,0,0,1)
 }
 
 CGINCLUDE
@@ -26,7 +29,8 @@ sampler2D _NormalMap;
 sampler2D _SpecularMap;
 sampler2D _GrossMap;
 fixed4 g_base_color;
-fixed4 g_base_emission;
+fixed4 _Emission;
+float3 _Offset;
 
 
 struct ia_out
@@ -58,6 +62,7 @@ vs_out vert(ia_out v)
     int vid = v.vertexID;
     int iid = v.instanceID;
     float4 pos      = float4(g_vertices[vid].position, 1.0);
+    pos.xyz += _Offset;
     float3 normal   = g_vertices[vid].normal;
     float4 tangent  = g_vertices[vid].tangent;
     float2 texcoord = g_vertices[vid].texcoord;
@@ -81,9 +86,9 @@ ps_out frag(vs_out v)
 {
     ps_out r;
     r.diffuse = 0.5;
-    r.spec_smoothness = 0.5;
+    r.spec_smoothness = 0.25;
     r.normal = float4(v.normal*0.5+0.5, 0.0);
-    r.emission = 0.5;
+    r.emission = tex2D(_EmissionMap, v.texcoord) * _Emission;
     return r;
 }
 ENDCG
