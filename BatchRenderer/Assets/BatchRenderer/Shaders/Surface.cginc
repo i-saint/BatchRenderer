@@ -4,14 +4,10 @@
 #include "UnityCG.cginc"
 #include "Assets/BatchRenderer/Shaders/BatchRenderer.cginc"
 
-void ApplyInstanceTransform(float2 id, inout float4 vertex, inout float3 normal, inout float4 tangent, inout float2 texcoord, inout float4 color, inout float4 emission)
-{
-    int instance_id = GetBatchBegin() + id.x;
-    if(instance_id >= GetNumInstances()) {
-        vertex.xyz *= 0.0;
-        return;
-    }
 
+
+void ApplyInstanceTransform2(int instance_id, inout float4 vertex, inout float3 normal, inout float4 tangent, inout float2 texcoord, inout float4 color, inout float4 emission)
+{
     vertex.xyz *= GetBaseScale();
 #ifndef BR_WITHOUT_INSTANCE_SCALE
     if(GetFlag_Scale()) {
@@ -46,6 +42,15 @@ void ApplyInstanceTransform(float2 id, inout float4 vertex, inout float3 normal,
 #endif // BR_WITHOUT_INSTANCE_EMISSION
 }
 
+void ApplyInstanceTransform(float2 id, inout float4 vertex, inout float3 normal, inout float4 tangent, inout float2 texcoord, inout float4 color, inout float4 emission)
+{
+    int instance_id = GetBatchBegin() + id.x;
+    if(instance_id >= GetNumInstances()) {
+        vertex.xyz *= 0.0;
+        return;
+    }
+    ApplyInstanceTransform2(instance_id, vertex, normal, tangent, texcoord, color, emission);
+}
 
 #if defined(BR_SURFACE) || defined(BR_SURFACE_DETAILED) || defined(BR_STANDARD)
     sampler2D _MainTex;
