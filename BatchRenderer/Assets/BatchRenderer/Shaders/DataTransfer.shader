@@ -21,7 +21,7 @@ struct vs_out
 
 struct ps_out
 {
-    float4 color : COLOR0;
+    float4 color : SV_Target;
 };
 
 int g_begin;

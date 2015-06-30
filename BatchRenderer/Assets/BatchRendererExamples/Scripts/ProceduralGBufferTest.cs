@@ -6,6 +6,7 @@ using System.Threading;
 public class ProceduralGBufferTest : MonoBehaviour
 {
     public GameObject m_prefab;
+    public int m_max_instance = 1000;
     public int m_count;
     ProceduralGBuffer m_pgb;
 
@@ -16,7 +17,7 @@ public class ProceduralGBufferTest : MonoBehaviour
 
     void Update()
     {
-        if (m_count < 2000)
+        if (m_count < m_max_instance)
         {
             for (int i = 0; i < 6; ++i )
             {
