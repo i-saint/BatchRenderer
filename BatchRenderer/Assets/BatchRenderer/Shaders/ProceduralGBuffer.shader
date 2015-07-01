@@ -5,7 +5,7 @@ Properties {
     _Glossiness ("Smoothness", Range(0,1)) = 0.5
     _Metallic ("Metallic", Range(0,1)) = 0.0
     _EmissionMap ("Emission Map", 2D) = "white" {}
-    _Emission ("Color", Color) = (1,1,1,1)
+    _Emission ("EmissionColor", Color) = (1,1,1,1)
     _Offset ("Offset", Vector) = (0,0,0,1)
 }
 
@@ -85,8 +85,8 @@ vs_out vert(ia_out v)
 ps_out frag(vs_out v)
 {
     ps_out r;
-    r.diffuse = 0.5;
-    r.spec_smoothness = 0.25;
+    r.diffuse = tex2D(_MainTex, v.texcoord) * _Color;
+    r.spec_smoothness = _Glossiness;
     r.normal = float4(v.normal*0.5+0.5, 0.0);
     r.emission = tex2D(_EmissionMap, v.texcoord) * _Emission;
     return r;
