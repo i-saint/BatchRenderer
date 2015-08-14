@@ -5,6 +5,7 @@
 #if UNITY_WIN
 #include <windows.h>
 #include <gl/GL.h>
+#pragma comment(lib,"opengl32.lib")
 #else
 #include <OpenGL/gl.h>
 #include <OpenGL/glext.h>

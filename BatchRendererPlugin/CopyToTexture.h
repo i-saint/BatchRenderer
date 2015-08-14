@@ -55,6 +55,7 @@ protected:
     std::vector<half4> m_bufferh;
 };
 
+CopyToTextureBase* CreateCopyToTextureD3D9(void *device);
 CopyToTextureBase* CreateCopyToTextureD3D11(void *device);
 CopyToTextureBase* CreateCopyToTextureOpenGL(void *device);
 

@@ -11,12 +11,12 @@ using UnityEditor;
 public class FrameCapturerPackaging
 {
     [MenuItem("Assets/BatchRenderer/MakePackage")]
-    public static void MakePackage_GIF()
+    public static void MakePackage()
     {
         string[] files = new string[]
         {
-"Assets/BatchRenderer/",
-"Assets/BatchRendererExamples/",
+"Assets/BatchRenderer",
+"Assets/BatchRendererExamples",
         };
         AssetDatabase.ExportPackage(files, "BatchRenderer.unitypackage", ExportPackageOptions.Recurse);
     }

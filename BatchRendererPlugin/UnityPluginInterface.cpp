@@ -10,7 +10,7 @@ extern "C" void EXPORT_API UnitySetGraphicsDevice(void* device, int deviceType, 
     if (eventType == kGfxDeviceEventInitialize) {
     #if SUPPORT_D3D9
         if (deviceType == kGfxRendererD3D9) {
-            // todo
+            g_c2t = CreateCopyToTextureD3D9(device);
         }
     #endif // SUPPORT_D3D9
     #if SUPPORT_D3D11
