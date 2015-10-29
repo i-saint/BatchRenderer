@@ -1,11 +1,13 @@
+[English](https://translate.google.com/translate?sl=ja&tl=en&u=https://github.com/i-saint/BatchRenderer) (by Google Translate)
+
 # BatchRenderer
 ![alt text](Screenshots/sc2.png )  
-Unity で大量のオブジェクトを描画できるようにするスクリプトです。パーティクル、弾幕などの描画に威力を発揮します。割とポータブルな作りになっており、D3D11、D3D9、OpenGL、OpenGL ES、PS4 などで動作します。  
-[動作例](http://primitive-games.jp/Unity/CSharpBullet.html)
-  
-  
+Unity で大量のオブジェクトを描画できるようにするスクリプトです。パーティクル、弾幕などの描画に威力を発揮します。割とポータブルな作りになっており、D3D11、D3D9、OpenGL、OpenGLES (Android, iOS, WebGL)、PS4 で動作を確認済みです。  
+[WebGL による動作例](http://primitive-games.jp/Unity/CSharpBulletWebGL/)
+
+
 ##### 使い方
-まず BatchRenderer コンポーネントを適当なオブジェクトに追加します。  
+[このパッケージ](https://github.com/i-saint/BatchRenderer/raw/master/Package/BatchRenderer.unitypackage) をインポートし、BatchRenderer コンポーネントを適当なオブジェクトに追加します。  
 ![alt text](Screenshots/sc3.png)  
 描画したいモデルを mesh に設定します。あまり頂点数が多くないモデルが望ましいです。  
 マテリアルを material に設定します。このマテリアルは BatchRenderer/ 以下のシェーダを使ったものである必要があります。  
@@ -28,7 +30,7 @@ Billboard 系のシェーダはビルボードを実現するためのもので�
 ![alt text](Screenshots/billboard.gif)  
 enable_uv_offset で UV オフセットを有効にすることで、スクリーンショットのようにテクスチャアニメーションもできます。  
 BatchRenderer 自身はソートはしないので、Billboard に限らず半透明オブジェクトを描く際は描画順に注意が必要です。(AddInstance() した順に描くようになっています)
-  
+
 FixedBillboard 系のシェーダもビルボードを実現するものですが、こちらは表示の中心位置に 3D 座標を使う以外は 2D 的な振る舞いをします。  
 スクリーンショットを見比べるとどういうことかわかりやすいと思います。下のスクリーンショットは上の Billboard と同じシーンで、シェーダだけが違います。Billboard だとパースがかかっている一方、FixedBillboard はかかっていないのが見て取れると思います。  
 ![alt text](Screenshots/fixedbillboard.gif)  

@@ -10,7 +10,7 @@ using UnityEditor;
 
 public class FrameCapturerPackaging
 {
-    [MenuItem("Assets/BatchRenderer/MakePackage")]
+    [MenuItem("Assets/Ist/BatchRenderer/MakePackage")]
     public static void MakePackage()
     {
         string[] files = new string[]
