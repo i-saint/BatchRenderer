@@ -15,7 +15,7 @@ public class FrameCapturerPackaging
     {
         string[] files = new string[]
         {
-"Assets/BatchRenderer",
+"Assets/Ist",
 "Assets/BatchRendererExamples",
         };
         AssetDatabase.ExportPackage(files, "BatchRenderer.unitypackage", ExportPackageOptions.Recurse);

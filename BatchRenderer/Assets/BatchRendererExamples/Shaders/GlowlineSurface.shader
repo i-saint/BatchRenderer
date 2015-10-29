@@ -1,7 +1,7 @@
 Shader "BatchRendererExample/GlowlineSurface" {
 Properties {
     g_base_color ("Base Color", Color) = (1,1,1,1)
-    g_base_emission ("Emission", Color) = (0,0,0,0)
+    _Emission ("Emission", Color) = (0,0,0,0)
     _MainTex ("Base (RGB)", 2D) = "white" {}
 }
 SubShader {
@@ -9,23 +9,22 @@ SubShader {
     LOD 200
 
 CGPROGRAM
-#if defined(SHADER_API_OPENGL)
-    #pragma glsl
-#elif defined(SHADER_API_D3D9)
+#if defined(SHADER_API_D3D9)
     #pragma target 3.0
-    #define WITHOUT_INSTANCE_COLOR
-    #define WITHOUT_INSTANCE_EMISSION
 #endif
-    #pragma target 4.0
+#define WITHOUT_INSTANCE_COLOR
+#define WITHOUT_INSTANCE_EMISSION
 
-#pragma multi_compile ___ USE_INSTANCE_BUFFER
+#pragma multi_compile ___ ENABLE_INSTANCE_BUFFER
 
 #pragma enable_d3d11_debug_symbols
-#pragma surface surf BlinnPhong vertex:vert
+#pragma surface surf Standard vertex:vert
 #include "UnityCG.cginc"
-#include "../../BatchRenderer/Shaders/BatchRenderer.cginc"
+#include "Assets/Ist/BatchRenderer/Shaders/BatchRenderer.cginc"
 #define WITHOUT_COMMON_VERT_SURF
-#include "../../BatchRenderer/Shaders/Surface.cginc"
+#include "Assets/Ist/BatchRenderer/Shaders/Surface.cginc"
+
+
 
 struct Input {
     float2 uv_MainTex;
@@ -37,20 +36,20 @@ struct Input {
 float4 g_base_color;
 
 
-void vert (inout appdata_full v, out Input o)
+void vert (inout appdata_full I, out Input O)
 {
-    UNITY_INITIALIZE_OUTPUT(Input,o);
+    UNITY_INITIALIZE_OUTPUT(Input, O);
 
-    int iid = GetInstanceID(v.texcoord1);
-    o.vertex_position = v.vertex.xyz * GetInstanceScale(iid);
-    o.vertex_normal = v.normal;
+    int iid = GetInstanceID(I.texcoord1);
+    O.vertex_position = I.vertex.xyz;
+    O.vertex_normal = I.normal;
 
     float4 color = 0.0;
     float4 emission = 0.0;
-    ApplyInstanceTransform(v.texcoord1.xy, v.vertex, v.normal, v.tangent, v.texcoord.xy, color, emission);
+    ApplyInstanceTransform(I.texcoord1.xy, I.vertex, I.normal, I.tangent, I.texcoord.xy, color, emission);
 
-    o.uv_MainTex = v.texcoord.xy;
-    o.instance_position = GetInstanceTranslation(iid);
+    O.uv_MainTex = I.texcoord.xy;
+    O.instance_position = GetInstanceTranslation(iid);
 }
 
 float2 boxcell(float3 p3, float3 n)
@@ -104,18 +103,18 @@ float2 boxcell(float3 p3, float3 n)
     return float2(g, v);
 }
 
-void surf (Input IN, inout SurfaceOutput o)
+void surf (Input I, inout SurfaceOutputStandard O)
 {
     float4 line_color = float4(0.5, 0.5, 1.0, 0.0);
-    float2 dg = boxcell(IN.vertex_position.xyz*0.05, IN.vertex_normal.xyz);
+    float2 dg = boxcell(I.vertex_position.xyz*0.05, I.vertex_normal.xyz);
     float pc = 1.0-clamp(1.0 - max(min(dg.x, 2.0)-1.0, 0.0)*2.0, 0.0, 1.0);
-    float d = -length(IN.vertex_position+IN.instance_position.xyz)*0.15 - dg.y*0.5;
+    float d = -length(I.vertex_position + I.instance_position.xyz)*0.15 - dg.y*0.5;
     float vg = max(0.0, frac(1.0-d*0.75-_Time.y*0.25)*3.0-2.0) * pc;
     float4 emission = line_color * vg * 1.5;
 
-    o.Albedo = g_base_color.rgb;
-    o.Alpha = 1.0;
-    o.Emission = emission;
+    O.Albedo = g_base_color.rgb;
+    O.Alpha = 1.0;
+    O.Emission = emission;
 }
 ENDCG
 }
