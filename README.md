@@ -6,7 +6,7 @@ Unity で大量のオブジェクトを描画できるようにするスクリ�
 [WebGL による動作例](http://primitive-games.jp/Unity/CSharpBulletWebGL/)
 
 
-##### 使い方
+### 使い方
 [このパッケージ](https://github.com/i-saint/BatchRenderer/raw/master/Package/BatchRenderer.unitypackage) をインポートし、BatchRenderer コンポーネントを適当なオブジェクトに追加します。  
 ![alt text](Screenshots/sc3.png)  
 描画したいモデルを mesh に設定します。あまり頂点数が多くないモデルが望ましいです。  
@@ -21,7 +21,7 @@ max_instances は文字通り最大インスタンス数で、これが描ける
 また、AddInstance() 一族はスレッドセーフになっています。
 
 
-##### シェーダについて
+### シェーダについて
 前述のように、マテリアルには BatchRenderer 以下のシェーダを使う必要があります。  
 Lambert や BlinnPhong は通常の 3D オブジェクトを描くためのものです。  
 
@@ -38,4 +38,13 @@ FixedBillboard 系のシェーダを使う場合、モデルの描画には画�
 例えば、付属の quad モデルは左端が -0.5、右端が 0.5 なので、これをそのままの大きさで画面に出すと横幅がちょうど画面の半分の大きさになります。2 倍のスケールにするとちょうど画面を覆う大きさになります。  
 
 
+### 注意点
+各インスタンスの情報を GPU 側に格納するのに、ComputeBuffer -> RGBAFloat のテクスチャ -> RGBAHalf のテクスチャ の順で使えるものを試します。
+(Data_transfer_mode を Buffer 以外にすると ComputeBuffer は省略します)  
+RGBAHalf のテクスチャだと精度が大きく落ちるため、位置が原点から大きく離れると移動がぎこちなくなる、などの制限が生じます。
+OpenGL ES 系プラットフォームでは現状ほぼ RGBAHalf しか選択肢がないため、この制限を念頭に置いておく必要があるでしょう。 
+
 より技術的な詳細に興味があれば、[こちらの記事](http://i-saint.hatenablog.com/entry/2015/02/08/225227)もご参照ください。
+
+### License
+<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
