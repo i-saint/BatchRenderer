@@ -32,12 +32,6 @@ float3  GetBaseScale()          { return g_scale.xyz; }
 int     GetBatchBegin()         { return g_batch_begin; }
 int     GetInstanceID(float2 i) { return i.x + g_batch_begin; }
 
-bool    GetFlag_Rotation()  { return g_flag_rotation!=0; }
-bool    GetFlag_Scale()     { return g_flag_scale!=0; }
-bool    GetFlag_Color()     { return g_flag_color!=0; }
-bool    GetFlag_Emission()  { return g_flag_emission!=0; }
-bool    GetFlag_UVOffset()  { return g_flag_uvoffset!=0; }
-
 #ifdef USE_STRUCTURED_BUFFER
 
 StructuredBuffer<float3>        g_instance_buffer_t;

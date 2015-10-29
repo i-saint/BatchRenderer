@@ -353,12 +353,28 @@ public class BatchRenderer : BatchRendererBase
         {
             m.EnableKeyword("ENABLE_INSTANCE_BUFFER");
         }
+        if (m_enable_rotation)
+        {
+            m.EnableKeyword("ENABLE_INSTANCE_ROTATION");
+        }
+        if (m_enable_scale)
+        {
+            m.EnableKeyword("ENABLE_INSTANCE_SCALE");
+        }
+        if (m_enable_emission)
+        {
+            m.EnableKeyword("ENABLE_INSTANCE_EMISSION");
+        }
+        if (m_enable_color)
+        {
+            m.EnableKeyword("ENABLE_INSTANCE_COLOR");
+        }
+        if (m_enable_uv_offset)
+        {
+            m.EnableKeyword("ENABLE_INSTANCE_UVOFFSET");
+        }
+
         m.SetInt("g_batch_begin", nth * m_instances_par_batch);
-        m.SetInt("g_flag_rotation", m_enable_rotation ? 1 : 0);
-        m.SetInt("g_flag_scale", m_enable_scale ? 1 : 0);
-        m.SetInt("g_flag_color", m_enable_color ? 1 : 0);
-        m.SetInt("g_flag_emission", m_enable_emission ? 1 : 0);
-        m.SetInt("g_flag_uvoffset", m_enable_uv_offset ? 1 : 0);
         m.SetVector("g_texel_size", m_instance_texel_size);
 
         if (m_instance_buffer != null)
@@ -524,12 +540,12 @@ public class BatchRenderer : BatchRendererBase
 
         if (m_data_transfer_mode == DataTransferMode.Buffer && !SystemInfo.supportsComputeShaders)
         {
-            Debug.Log("BatchRenderer: ComputeBuffer is not available. fallback to TextureWithMesh data transfer mode.");
+            Debug.Log("BatchRenderer: ComputeBuffer is not available. fallback to Texture data transfer mode.");
             m_data_transfer_mode = DataTransferMode.Texture;
         }
         if (m_data_transfer_mode == DataTransferMode.TextureWithPlugin && !BatchRendererUtil.IsCopyToTextureAvailable())
         {
-            Debug.Log("BatchRenderer: CopyToTexture plugin is not available. fallback to TextureWithMesh data transfer mode.");
+            Debug.Log("BatchRenderer: CopyToTexture plugin is not available. fallback to Texture data transfer mode.");
             m_data_transfer_mode = DataTransferMode.Texture;
         }
 

@@ -18,18 +18,15 @@ Category {
         Pass {
 CGPROGRAM
 #pragma target 3.0
-#define ENABLE_INSTANCE_SCALE
-#define ENABLE_INSTANCE_ROTATION
-#define ENABLE_INSTANCE_UVOFFSET
-#define ENABLE_INSTANCE_EMISSION
-#if SHADER_TARGET > 30
-    // on shader model 3.0, this exceeds max interpolator values..
-    #define ENABLE_INSTANCE_COLOR
-#endif
 
 #pragma vertex vert
 #pragma fragment frag
 #pragma multi_compile ___ ENABLE_INSTANCE_BUFFER
+#pragma shader_feature ENABLE_INSTANCE_ROTATION
+#pragma shader_feature ENABLE_INSTANCE_SCALE
+#pragma shader_feature ENABLE_INSTANCE_EMISSION
+#pragma shader_feature ENABLE_INSTANCE_COLOR
+#pragma shader_feature ENABLE_INSTANCE_UVOFFSET
 
 #define BR_BILLBOARD
 #include "Billboard.cginc"
