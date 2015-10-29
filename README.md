@@ -40,9 +40,9 @@ FixedBillboard 系のシェーダを使う場合、モデルの描画には画�
 
 ### 注意点
 各インスタンスの情報を GPU 側に格納するのに、ComputeBuffer -> RGBAFloat のテクスチャ -> RGBAHalf のテクスチャ の順で使えるものを試します。
-(Data_transfer_mode を Buffer 以外にすると ComputeBuffer は省略します)  
+(ただし、Data_transfer_mode を Buffer 以外にすると ComputeBuffer は省略します)  
 RGBAHalf のテクスチャだと精度が大きく落ちるため、位置が原点から大きく離れると移動がぎこちなくなる、などの制限が生じます。
-OpenGL ES 系プラットフォームでは現状ほぼ RGBAHalf しか選択肢がないため、この制限を念頭に置いておく必要があるでしょう。 
+OpenGL ES 系プラットフォームでは現状ほぼ RGBAHalf のテクスチャしか選択肢がないため、この制限を念頭に置いておく必要があるでしょう。
 
 より技術的な詳細に興味があれば、[こちらの記事](http://i-saint.hatenablog.com/entry/2015/02/08/225227)もご参照ください。
 
