@@ -15,11 +15,6 @@
 int     g_num_instances;
 float4  g_scale;
 float4  g_texel_size;
-int     g_flag_rotation;
-int     g_flag_scale;
-int     g_flag_color;
-int     g_flag_emission;
-int     g_flag_uvoffset;
 int     g_batch_begin;
 
 int     GetNumInstances()       { return g_num_instances; }

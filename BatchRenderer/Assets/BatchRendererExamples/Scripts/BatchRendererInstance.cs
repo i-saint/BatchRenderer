@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using Ist;
 
 public class BatchRendererInstance : MonoBehaviour
 {

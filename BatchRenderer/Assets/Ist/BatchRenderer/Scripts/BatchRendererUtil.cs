@@ -5,22 +5,9 @@ using System.Runtime.InteropServices;
 using System.Threading;
 
 
-[StructLayout(LayoutKind.Explicit)]
-public struct ArrayCaster<A, B>
+
+namespace Ist
 {
-    [FieldOffset(0)] public A[] a;
-    [FieldOffset(0)] public B[] b;
-
-    public static B[] cast(A[] a)
-    {
-        ArrayCaster<A, B> caster;
-        caster.b = null; // this is needed to shut down dumb compiler :(
-        caster.a = a;
-        return caster.b;
-    }
-}
-
-
 
 public static class BatchRendererUtil
 {
@@ -314,3 +301,4 @@ public static class BatchRendererUtil
     }
 }
 
+}

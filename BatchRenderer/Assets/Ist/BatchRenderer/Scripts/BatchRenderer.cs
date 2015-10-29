@@ -8,6 +8,9 @@ using System.Runtime.InteropServices;
 using System.Threading;
 
 
+namespace Ist
+{
+
 public class BatchRenderer : BatchRendererBase
 {
 
@@ -575,4 +578,6 @@ public class BatchRenderer : BatchRendererBase
             GUI.DrawTexture(new Rect(5, 5, 128, 128), m_instance_texture.translation);
         }
     }
+}
+
 }
