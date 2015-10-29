@@ -13,11 +13,11 @@ CGPROGRAM
 #pragma target 3.0
 #pragma surface surf Standard fullforwardshadows vertex:vert addshadow
 #pragma multi_compile ___ ENABLE_INSTANCE_BUFFER
-#pragma shader_feature ENABLE_INSTANCE_ROTATION
-#pragma shader_feature ENABLE_INSTANCE_SCALE
-#pragma shader_feature ENABLE_INSTANCE_EMISSION
-#pragma shader_feature ENABLE_INSTANCE_UVOFFSET
-#pragma shader_feature ENABLE_INSTANCE_COLOR
+#pragma multi_compile ___ ENABLE_INSTANCE_ROTATION
+#pragma multi_compile ___ ENABLE_INSTANCE_SCALE
+#pragma multi_compile ___ ENABLE_INSTANCE_EMISSION
+#pragma multi_compile ___ ENABLE_INSTANCE_UVOFFSET
+#pragma multi_compile ___ ENABLE_INSTANCE_COLOR
 
 
 #define BR_STANDARD

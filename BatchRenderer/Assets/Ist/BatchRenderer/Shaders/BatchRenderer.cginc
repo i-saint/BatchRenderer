@@ -1,18 +1,13 @@
 #ifndef BatchRenderer_h
 #define BatchRenderer_h
 
-#include "Assets/Ist/BatchRenderer/Shaders/Math.cginc"
-#include "Assets/Ist/BatchRenderer/Shaders/Geometry.cginc"
+#include "Assets/Ist/Foundation/Shaders/Math.cginc"
+#include "Assets/Ist/Foundation/Shaders/Geometry.cginc"
 
 
 #if ENABLE_INSTANCE_BUFFER
 #if (defined(SHADER_API_D3D11) || defined(SHADER_API_PSSL))
     #define USE_STRUCTURED_BUFFER
-    #define ENABLE_INSTANCE_SCALE
-    #define ENABLE_INSTANCE_ROTATION
-    #define ENABLE_INSTANCE_EMISSION
-    #define ENABLE_INSTANCE_UVOFFSET
-    #define ENABLE_INSTANCE_COLOR
 #endif
 #endif
 

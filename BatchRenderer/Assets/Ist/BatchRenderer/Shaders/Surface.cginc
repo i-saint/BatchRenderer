@@ -67,13 +67,12 @@ void ApplyInstanceTransform(int instance_id, inout float4 vertex, inout float3 n
         UNITY_INITIALIZE_OUTPUT(Input,O);
 
         int iid = GetBatchBegin() + I.texcoord1.x;
-        float2 itc = InstanceTexcoord(iid).xy;
 
         float4 color = I.color * g_base_color;
-        float4 emission = _Emission;
+        float4 emission = 0.0;
         ApplyInstanceTransform(iid, I.vertex, I.normal, I.tangent, I.texcoord.xy, color, emission);
 
-        O.uv_MainTex = float4(I.texcoord.xy, itc);
+        O.uv_MainTex = float4(I.texcoord.xy, 0.0, 0.0);
 #if ENABLE_INSTANCE_COLOR && SHADER_TARGET > 30
         o.color = color;
 #endif
@@ -96,8 +95,9 @@ void ApplyInstanceTransform(int instance_id, inout float4 vertex, inout float3 n
         O.Metallic = _Metallic;
         O.Smoothness = _Glossiness;
         O.Alpha = c.a;
+        O.Emission += _Emission;
 #if ENABLE_INSTANCE_EMISSION
-        O.Emission = I.emission;
+        O.Emission += I.emission;
 #endif
     }
 #endif // BR_STANDARD

@@ -22,11 +22,11 @@ CGPROGRAM
 #pragma vertex vert
 #pragma fragment frag
 #pragma multi_compile ___ ENABLE_INSTANCE_BUFFER
-#pragma shader_feature ENABLE_INSTANCE_ROTATION
-#pragma shader_feature ENABLE_INSTANCE_SCALE
-#pragma shader_feature ENABLE_INSTANCE_EMISSION
-#pragma shader_feature ENABLE_INSTANCE_COLOR
-#pragma shader_feature ENABLE_INSTANCE_UVOFFSET
+#pragma multi_compile ___ ENABLE_INSTANCE_ROTATION
+#pragma multi_compile ___ ENABLE_INSTANCE_SCALE
+#pragma multi_compile ___ ENABLE_INSTANCE_EMISSION
+#pragma multi_compile ___ ENABLE_INSTANCE_COLOR
+#pragma multi_compile ___ ENABLE_INSTANCE_UVOFFSET
 
 #define BR_BILLBOARD
 #include "Billboard.cginc"
